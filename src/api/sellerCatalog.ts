@@ -54,6 +54,7 @@ export function toPublicProduct(p: SellerProduct, store: SellerStore, rank: numb
     reviewsCount: 0,
     createdRank: -1000 + rank,
     salesEnabled: store.status === 'verified',
+    stock: p.stock,
   };
 }
 

@@ -92,3 +92,31 @@ supabase/migrations/         Schéma + RLS prêts à appliquer (NON appliqués)
 - Favoris et panier en mémoire : la persistance arrive avec les comptes utilisateurs.
 - Paiement, suivi de commande et espace vendeur : prochaines livraisons.
 - Pour tester l'état d'erreur réseau : `SIMULATE_FLAKY_NETWORK = true` dans `src/api/catalog.ts`.
+
+## Livraison 3 : vitrine publique des boutiques
+
+Page `app/store/[id].tsx` (même route : les liens existants restent valides). L'accueil n'est pas modifié.
+
+**Contenu de la vitrine** : grande bannière, logo, nom, accroche, ville · Suivre / Contacter / Partager ·
+Coups de cœur · Collections illustrées · Nouveautés · Promotions · catalogue complet en Masonry avec
+recherche limitée à la boutique et filtres (catégorie, prix, disponibilité, promotions, tri).
+
+**5 modèles** (`src/storefront/templates.ts`) : Mode et accessoires, Beauté et cosmétiques, Électronique,
+Maison et décoration, Boutique généraliste. Chaque modèle règle la bannière, les titres, la forme des
+collections et les arrondis. Chaque vendeur choisit sa couleur ; la palette garde des textes lisibles.
+Changer de modèle ou de couleur ne touche pas aux produits (réglages séparés : `SellerStore.storefront`).
+
+```
+src/types/storefront.ts         Types purs (réutilisables par une vitrine web)
+src/storefront/templates.ts     Modèles + calcul des couleurs (sans dépendance React Native)
+src/api/storefront.ts           getStorefront / getStorefrontSections
+src/components/storefront/      StoreHero, StoreSections, StoreCatalogFilters, StoreContactShare, StoreSheet
+src/data/storefronts.ts         ⚠️ Démo : réglages des vitrines + produits visibles uniquement sur leur vitrine
+supabase/migrations/20261104090000_storefront.sql   storefront_settings + vue storefront_public (NON appliqué)
+```
+
+Vitrines de démo à essayer : `mode-afrique` (Mode), `elegance-ci` (Mode, chocolat), `belle-parfums` (Beauté),
+`tech-zone` (Électronique), `maison-moderne` (Maison), `marche-frais` (Généraliste).
+
+Prochaine étape : **Studio Boutique** (choisir le modèle, changer les couleurs, ajouter une photo,
+mettre un produit en avant, aperçu en direct), qui écrira dans `SellerStore.storefront`.

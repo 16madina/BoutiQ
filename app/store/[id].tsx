@@ -1,56 +1,87 @@
-import { Image } from 'expo-image';
-import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
-import { BadgeCheck, ChevronLeft, MapPin, SearchX, Share2, Star, Truck } from 'lucide-react-native';
+import { ChevronLeft, SearchX, Share2 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { getStore } from '@/api/catalog';
+import { storefrontProducts } from '@/api/catalog';
+import { getStorefront, getStorefrontSections } from '@/api/storefront';
 import { CircleIconButton } from '@/components/CircleIconButton';
 import { EmptyState } from '@/components/EmptyState';
-import { FollowButton } from '@/components/FollowButton';
 import { ProductMasonryGrid } from '@/components/ProductMasonryGrid';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { StoreAvatar } from '@/components/StoreAvatar';
+import {
+  activeFilterCount,
+  DEFAULT_STORE_FILTERS,
+  StoreFilterBar,
+  StoreFilterSheet,
+  StoreSearchField,
+  type StoreFilters,
+} from '@/components/storefront/StoreCatalogFilters';
+import { StoreContactSheet, StoreShareSheet } from '@/components/storefront/StoreContactShare';
+import { StoreHero } from '@/components/storefront/StoreHero';
+import { CollectionShowcase, ProductRail, StoreSectionTitle } from '@/components/storefront/StoreSections';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { usePaginatedProducts } from '@/hooks/usePaginatedProducts';
-import { colors, fonts, radii, spacing, typography } from '@/theme';
-import { formatCount } from '@/utils/format';
-import { haptics } from '@/utils/haptics';
-import { storeBannerUri } from '@/utils/images';
-import { storeUrl } from '@/config/links';
+import { PRICE_RANGES } from '@/store/useShop';
 import { useSeller } from '@/store/useSeller';
-import { LinearGradient } from 'expo-linear-gradient';
+import { colors, fonts, spacing } from '@/theme';
+import type { ProductQuery } from '@/types';
+import type { StorefrontCollection } from '@/types/storefront';
 
-/** Vitrine personnelle d'un vendeur. */
+/**
+ * Vitrine publique d'une boutique : bannière, identité, actions, collections,
+ * Coups de cœur, Nouveautés, Promotions, puis le catalogue complet (Masonry)
+ * avec recherche et filtres limités à la boutique.
+ */
 export default function StoreScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const store = getStore(id);
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const [tab, setTab] = useState<string>('Tout');
-  // Boutiques créées par un vendeur : vraie collection. Boutiques de démo : filtre par mot-clé.
-  const isSellerStore = !!store?.slug;
-  const query = useMemo(
-    () =>
-      tab === 'Tout'
-        ? { storeId: id }
-        : isSellerStore
-          ? { storeId: id, collection: tab }
-          : { storeId: id, query: tab.replace(/s$/i, '') },
-    [id, tab, isSellerStore],
-  );
-  const feed = usePaginatedProducts(query);
-  const recordStoreView = useSeller((s) => s.recordStoreView);
-  const ownSlug = useSeller((s) => s.store?.slug);
-  const space = useSeller((s) => s.space);
+
+  // La vitrine se met à jour quand le vendeur modifie sa boutique sur l'appareil.
+  const ownStore = useSeller((s) => s.store);
+  const ownProducts = useSeller((s) => s.products);
+  // getStorefront lit la boutique locale : on recalcule quand elle change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const sf = useMemo(() => getStorefront(id), [id, ownStore, ownProducts]);
+  const sections = useMemo(() => (sf ? getStorefrontSections(sf) : null), [sf]);
+
+  const [search, setSearch] = useState('');
+  const query = useDebouncedValue(search.trim(), 250);
+  const [collection, setCollection] = useState<StorefrontCollection | null>(null);
+  const [filters, setFilters] = useState<StoreFilters>(DEFAULT_STORE_FILTERS);
+  const [sheet, setSheet] = useState<'contact' | 'share' | 'filters' | null>(null);
+
+  const productQuery = useMemo<ProductQuery>(() => {
+    const range = PRICE_RANGES[filters.priceRange];
+    return {
+      storeId: sf?.store.id ?? id,
+      storefront: true,
+      query: query || undefined,
+      collection: collection && !collection.productKeys ? collection.name : undefined,
+      productKeys: collection?.productKeys,
+      categoryId: filters.categoryId,
+      onlyPromo: filters.onlyPromo || undefined,
+      inStockOnly: filters.inStockOnly || undefined,
+      priceMin: range.min,
+      priceMax: range.max,
+      sort: filters.sort,
+    };
+  }, [sf?.store.id, id, query, collection, filters]);
+
+  const feed = usePaginatedProducts(productQuery);
+  const resultCount = useMemo(() => storefrontProducts(productQuery).length, [productQuery]);
 
   // Statistique « vues » de la vitrine (hors consultation par le vendeur lui-même).
+  const recordStoreView = useSeller((s) => s.recordStoreView);
+  const space = useSeller((s) => s.space);
   useEffect(() => {
-    if (ownSlug && ownSlug === id && space === 'buyer') recordStoreView();
-  }, [id, ownSlug, space, recordStoreView]);
+    if (sf?.isOwn && space === 'buyer') recordStoreView();
+  }, [sf?.isOwn, space, recordStoreView]);
 
-  if (!store) {
+  if (!sf || !sections) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ScreenHeader title="Boutique" />
@@ -59,80 +90,79 @@ export default function StoreScreen() {
     );
   }
 
-  const bannerHeight = Math.round(width * 0.5);
-  const shareLink = store.slug ? storeUrl(store.slug) : Linking.createURL(`/store/${store.id}`);
-  const bannerUri = storeBannerUri(store, width, 0.5);
+  const { template, palette } = sf;
+  const filtering = !!query || !!collection || activeFilterCount(filters) > 0;
+  const clearAll = () => {
+    setSearch('');
+    setCollection(null);
+    setFilters(DEFAULT_STORE_FILTERS);
+  };
 
   const header = (
     <View>
-      {bannerUri ? (
-        <Image source={{ uri: bannerUri }} style={{ width, height: bannerHeight, backgroundColor: colors.champagne }} contentFit="cover" cachePolicy="memory-disk" transition={250} />
-      ) : (
-        <LinearGradient colors={[colors.champagne, colors.caramel]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width, height: bannerHeight }} />
-      )}
-      {store.salesEnabled === false && (
-        <View style={styles.pending}>
-          <Text style={styles.pendingText}>Boutique en cours de vérification · achats bientôt disponibles</Text>
-        </View>
-      )}
-      <View style={styles.info}>
-        <View style={styles.identity}>
-          <View style={{ marginTop: -44 }}>
-            <StoreAvatar store={store} size={78} />
-          </View>
-          <View style={styles.actions}>
-            <FollowButton storeId={store.id} />
-          </View>
-        </View>
-        <View style={styles.nameRow}>
-          <Text style={typography.h1} numberOfLines={1}>
-            {store.name}
-          </Text>
-          {store.verified && <BadgeCheck size={20} color={colors.caramel} strokeWidth={2} />}
-        </View>
-        <Text style={styles.subtitle}>{store.verified ? 'Boutique vérifiée' : 'Vendeur indépendant'}</Text>
-        <View style={styles.stats}>
-          <Star size={14} color={colors.caramel} fill={colors.caramel} />
-          <Text style={styles.statText}>
-            {store.reviewsCount > 0
-              ? `${store.rating.toFixed(1).replace('.', ',')} (${formatCount(store.reviewsCount)} avis)`
-              : 'Nouvelle boutique'}
-          </Text>
-          <Text style={styles.sep}>•</Text>
-          <Text style={styles.statText}>{formatCount(store.followers)} abonnés</Text>
-        </View>
-        <Text style={styles.description}>{store.description}</Text>
-        <View style={styles.metaRow}>
-          <MapPin size={15} color={colors.cognac} strokeWidth={1.8} />
-          <Text style={styles.metaText}>
-            {store.city}, {store.country}
-          </Text>
-        </View>
-        <View style={styles.metaRow}>
-          <Truck size={15} color={colors.cognac} strokeWidth={1.8} />
-          <Text style={styles.metaText}>{store.delivery}</Text>
-        </View>
+      <StoreHero sf={sf} width={width} topInset={insets.top} onContact={() => setSheet('contact')} onShare={() => setSheet('share')} />
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-          {['Tout', ...store.collections].map((c) => {
-            const active = c === tab;
-            return (
-              <Pressable
-                key={c}
-                onPress={() => {
-                  haptics.selection();
-                  setTab(c);
-                }}
-                style={[styles.chip, active && styles.chipActive]}
-              >
-                <Text style={[styles.chipText, active && { color: colors.white }]}>{c}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-        <Text style={styles.count}>
-          {feed.total} produit{feed.total > 1 ? 's' : ''}
-        </Text>
+      <View style={styles.sections}>
+        {!filtering && sections.featured.length > 0 && (
+          <Animated.View entering={FadeIn.duration(300)}>
+            <StoreSectionTitle kicker="Sélection de la boutique" title="Coups de cœur" template={template} palette={palette} />
+            <ProductRail products={sections.featured} template={template} palette={palette} size="lg" />
+          </Animated.View>
+        )}
+
+        {sf.collections.length > 0 && (
+          <View>
+            <StoreSectionTitle kicker="Collections" title="Explorer la boutique" template={template} palette={palette} />
+            <CollectionShowcase
+              collections={sf.collections}
+              template={template}
+              palette={palette}
+              selectedId={collection?.id}
+              onSelect={setCollection}
+            />
+          </View>
+        )}
+
+        {!filtering && sections.newArrivals.length > 0 && (
+          <Animated.View entering={FadeIn.duration(300)}>
+            <StoreSectionTitle kicker="Nouveau" title="Nouveautés" template={template} palette={palette} />
+            <ProductRail products={sections.newArrivals} template={template} palette={palette} badge="Nouveau" />
+          </Animated.View>
+        )}
+
+        {!filtering && sections.promotions.length > 0 && (
+          <Animated.View entering={FadeIn.duration(300)}>
+            <StoreSectionTitle kicker="Bons plans" title="Promotions" template={template} palette={palette} />
+            <ProductRail products={sections.promotions} template={template} palette={palette} />
+          </Animated.View>
+        )}
+
+        <View style={{ gap: 12 }}>
+          <StoreSectionTitle
+            kicker="Catalogue"
+            title={collection ? collection.name : 'Tous les articles'}
+            template={template}
+            palette={palette}
+            right={
+              <Text style={styles.count}>
+                {resultCount} article{resultCount > 1 ? 's' : ''}
+              </Text>
+            }
+          />
+          <StoreSearchField value={search} onChange={setSearch} storeName={sf.store.name} palette={palette} />
+          <StoreFilterBar
+            filters={filters}
+            onChange={setFilters}
+            categories={sf.categories}
+            palette={palette}
+            onOpenSheet={() => setSheet('filters')}
+          />
+          {filtering && (
+            <Text style={[styles.clear, { color: palette.accentInk }]} onPress={clearAll} accessibilityRole="button">
+              Effacer la recherche et les filtres
+            </Text>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -150,58 +180,46 @@ export default function StoreScreen() {
         onEndReached={feed.loadMore}
         onRetry={feed.retry}
         ListHeaderComponent={header}
-        bottomInset={insets.bottom + 24}
+        bottomInset={insets.bottom + 32}
         emptyComponent={
           <EmptyState
             compact
             icon={SearchX}
-            title={tab === 'Tout' ? 'Aucun produit publié' : 'Collection vide pour le moment'}
+            title={filtering ? 'Aucun article ne correspond' : 'Aucun produit publié'}
+            message={filtering ? 'Essayez un autre mot ou retirez un filtre.' : undefined}
+            actionLabel={filtering ? 'Tout afficher' : undefined}
+            onAction={filtering ? clearAll : undefined}
           />
         }
       />
+
       <View style={[styles.topBar, { top: insets.top + 6 }]}>
         <CircleIconButton variant="glass" size={42} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} accessibilityLabel="Retour">
           <ChevronLeft size={22} strokeWidth={1.9} color={colors.text} />
         </CircleIconButton>
-        <CircleIconButton
-          variant="glass"
-          size={42}
-          onPress={() => Share.share({ message: `Découvrez ${store.name} sur BoutiQ : ${shareLink}` }).catch(() => {})}
-          accessibilityLabel="Partager la boutique"
-        >
+        <CircleIconButton variant="glass" size={42} onPress={() => setSheet('share')} accessibilityLabel="Partager la boutique">
           <Share2 size={19} strokeWidth={1.8} color={colors.text} />
         </CircleIconButton>
       </View>
+
+      <StoreContactSheet sf={sf} visible={sheet === 'contact'} onClose={() => setSheet(null)} />
+      <StoreShareSheet sf={sf} visible={sheet === 'share'} onClose={() => setSheet(null)} />
+      <StoreFilterSheet
+        visible={sheet === 'filters'}
+        onClose={() => setSheet(null)}
+        filters={filters}
+        onChange={setFilters}
+        categories={sf.categories}
+        palette={palette}
+        resultCount={resultCount}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  info: { paddingHorizontal: spacing.screen, paddingBottom: spacing.md },
-  pending: { backgroundColor: '#F6E8D6', paddingVertical: 8, paddingHorizontal: spacing.screen, paddingLeft: 110 },
-  pendingText: { fontFamily: fonts.medium, fontSize: 12, color: colors.chocolate },
-  identity: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
-  actions: { flexDirection: 'row', gap: 10, paddingTop: 12 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
-  subtitle: { ...typography.caption, color: colors.caramel, fontFamily: fonts.medium, marginTop: 2 },
-  stats: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
-  statText: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.text },
-  sep: { color: colors.textMuted },
-  description: { ...typography.body, fontSize: 14.5, lineHeight: 21, color: '#3A3430', marginTop: 10 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  metaText: { ...typography.caption, fontSize: 13.5, flex: 1, color: '#4A433E' },
-  tabs: { gap: 8, paddingTop: spacing.lg, paddingBottom: 4 },
-  chip: {
-    paddingHorizontal: 16,
-    height: 36,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    justifyContent: 'center',
-  },
-  chipActive: { backgroundColor: colors.buttonPrimary, borderColor: colors.buttonPrimary },
-  chipText: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.text },
-  count: { ...typography.caption, marginTop: spacing.md },
+  sections: { paddingTop: 30, paddingBottom: 14, gap: 34 },
+  count: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.textSecondary, paddingBottom: 3 },
+  clear: { fontFamily: fonts.semibold, fontSize: 14, paddingHorizontal: spacing.screen, paddingVertical: 4 },
   topBar: { position: 'absolute', left: spacing.screen, right: spacing.screen, flexDirection: 'row', justifyContent: 'space-between' },
 });

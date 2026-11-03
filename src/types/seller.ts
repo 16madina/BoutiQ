@@ -1,4 +1,5 @@
 import type { CategoryId } from '@/types';
+import type { StorefrontSettings } from '@/types/storefront';
 
 /**
  * Cycle de vérification :
@@ -31,6 +32,8 @@ export interface SellerStore {
   logo?: LocalImage;
   banner?: LocalImage;
   collections: StoreCollection[];
+  /** Réglages de la vitrine (Studio Boutique). Absent = modèle proposé selon la catégorie. */
+  storefront?: Partial<StorefrontSettings>;
   status: VerificationStatus;
   rejectionReason?: string;
   createdAt: string;

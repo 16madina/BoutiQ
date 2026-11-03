@@ -5,6 +5,7 @@
  */
 import { getSellerPublicProducts, getSellerPublicStore, isSellerStoreVerified } from '@/api/sellerCatalog';
 import { CATEGORIES, DEMO_CATALOG, STORES } from '@/data/demo';
+import { DEMO_STOCK, STOREFRONT_EXTRA_PRODUCTS } from '@/data/storefronts';
 import { useSeller } from '@/store/useSeller';
 import type { Category, Page, Product, ProductQuery, Store } from '@/types';
 import { discountPercent, normalize } from '@/utils/format';
@@ -27,6 +28,14 @@ function delay(ms: number, signal?: AbortSignal) {
 }
 
 const storeById = new Map(STORES.map((s) => [s.id, s]));
+
+/** Suffixe des séries répétées du catalogue de démo (« robe-wax-2 »). */
+const SERIES_SUFFIX = /-[23]$/;
+
+/** Identifiant du produit d'origine, sans le numéro de série. */
+export function baseKey(id: string): string {
+  return id.replace(SERIES_SUFFIX, '');
+}
 const categoryById = new Map(CATEGORIES.map((c) => [c.id, c]));
 
 export function getStore(id: string): Store | undefined {
@@ -38,11 +47,21 @@ export function getStore(id: string): Store | undefined {
  * Ces derniers n'apparaissent dans les flux généraux qu'une fois la boutique vérifiée ;
  * ils sont toujours visibles sur la vitrine de la boutique.
  */
+/** Produits de démo avec leur stock (les séries répétées gardent le stock du modèle). */
+const DEMO_WITH_STOCK: Product[] = DEMO_CATALOG.map((p) => {
+  const stock = DEMO_STOCK[baseKey(p.id)];
+  return stock == null ? p : { ...p, stock };
+});
+
+/** Vitrine : chaque produit de démo une seule fois + produits réservés à la vitrine. */
+const STOREFRONT_CATALOG: Product[] = [...STOREFRONT_EXTRA_PRODUCTS, ...DEMO_WITH_STOCK.filter((p) => !SERIES_SUFFIX.test(p.id))];
+
 function catalogFor(q: ProductQuery): Product[] {
   const sellerProducts = getSellerPublicProducts();
-  if (sellerProducts.length === 0) return DEMO_CATALOG;
+  if (q.storefront) return [...sellerProducts, ...STOREFRONT_CATALOG];
+  if (sellerProducts.length === 0) return DEMO_WITH_STOCK;
   const visible = isSellerStoreVerified() || (q.storeId != null && sellerProducts.some((p) => p.storeId === q.storeId));
-  return visible ? [...sellerProducts, ...DEMO_CATALOG] : DEMO_CATALOG;
+  return visible ? [...sellerProducts, ...DEMO_WITH_STOCK] : DEMO_WITH_STOCK;
 }
 
 export function getCategory(id: string): Category | undefined {
@@ -56,6 +75,8 @@ function matches(p: Product, q: ProductQuery): boolean {
   if (q.onlyPromo && !discountPercent(p.price, p.oldPrice)) return false;
   if (q.priceMin != null && p.price < q.priceMin) return false;
   if (q.priceMax != null && p.price > q.priceMax) return false;
+  if (q.inStockOnly && (p.stock ?? 1) <= 0) return false;
+  if (q.productKeys && !q.productKeys.includes(baseKey(p.id))) return false;
   if (q.query) {
     const needle = normalize(q.query);
     const store = getStore(p.storeId);
@@ -105,12 +126,24 @@ export async function fetchProduct(id: string): Promise<Product | undefined> {
 
 /** Lecture synchrone pour l'affichage instantané d'une fiche déjà vue dans la grille. */
 export function peekProduct(id: string): Product | undefined {
-  return DEMO_CATALOG.find((p) => p.id === id) ?? getSellerPublicProducts().find((p) => p.id === id);
+  return (
+    DEMO_WITH_STOCK.find((p) => p.id === id) ??
+    STOREFRONT_EXTRA_PRODUCTS.find((p) => p.id === id) ??
+    getSellerPublicProducts().find((p) => p.id === id)
+  );
 }
 
 export function peekProducts(ids: string[]): Product[] {
   const set = new Set(ids);
-  return [...getSellerPublicProducts(), ...DEMO_CATALOG].filter((p) => set.has(p.id));
+  return [...getSellerPublicProducts(), ...STOREFRONT_EXTRA_PRODUCTS, ...DEMO_WITH_STOCK].filter((p) => set.has(p.id));
+}
+
+/** Lecture synchrone des produits d'une vitrine (sections Nouveautés, Promotions…). */
+export function storefrontProducts(q: ProductQuery): Product[] {
+  return sortProducts(
+    catalogFor({ ...q, storefront: true }).filter((p) => matches(p, q)),
+    q.sort,
+  );
 }
 
 export function searchStores(query: string): Store[] {

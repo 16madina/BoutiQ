@@ -56,6 +56,8 @@ export interface Product {
   reviewsCount: number;
   sizes?: string[];
   createdRank: number;
+  /** Quantité disponible (absent = en stock). 0 = épuisé. */
+  stock?: number;
 }
 
 export type SortOption = 'relevance' | 'price_asc' | 'price_desc' | 'discount';
@@ -69,6 +71,15 @@ export interface ProductQuery {
   priceMin?: number;
   priceMax?: number;
   sort?: SortOption;
+  /** Masque les produits épuisés. */
+  inStockOnly?: boolean;
+  /** Limite aux produits listés (collections des vitrines de démo). */
+  productKeys?: string[];
+  /**
+   * Vitrine d'une boutique : chaque produit une seule fois (sans les séries
+   * répétées du catalogue de démo) + produits réservés à la vitrine.
+   */
+  storefront?: boolean;
 }
 
 export interface Page<T> {
