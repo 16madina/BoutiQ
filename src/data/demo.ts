@@ -1,0 +1,281 @@
+/**
+ * ⚠️ DONNÉES DE DÉMONSTRATION
+ * Produits, boutiques et prix fictifs. Photos : Unsplash (licence libre).
+ * À remplacer par l'API réelle (voir src/api/catalog.ts).
+ */
+import type { Banner, Category, Product, Store } from '@/types';
+
+export const DEMO_USER = {
+  firstName: 'Aïcha',
+  avatarPhotoId: '1507152832244-10d45c7eda57',
+};
+
+export const CATEGORIES: Category[] = [
+  { id: 'mode', name: 'Mode', emoji: '👗', coverPhotoId: '1572804013309-59a88b7e92f1' },
+  { id: 'electronique', name: 'Électronique', icon: 'smartphone', coverPhotoId: '1511707171634-5f897ff02aa9' },
+  { id: 'maison', name: 'Maison', icon: 'sofa', coverPhotoId: '1555041469-a586c61ea9bc' },
+  { id: 'beaute', name: 'Beauté', emoji: '💄', coverPhotoId: '1588405748880-12d1d2a59f75' },
+  { id: 'alimentation', name: 'Alimentation', emoji: '🧺', coverPhotoId: '1610832958506-aa56368176cf' },
+  { id: 'sport', name: 'Sport', emoji: '⚽', coverPhotoId: '1579952363873-27f3bade9f55' },
+];
+
+export const STORES: Store[] = [
+  {
+    id: 'elegance-ci',
+    name: 'Boutique Élégance CI',
+    city: 'Abidjan',
+    country: "Côte d'Ivoire",
+    description: 'Maroquinerie et accessoires de créateurs, sélectionnés avec soin à Abidjan.',
+    logoInitials: 'ÉC',
+    logoColor: '#8A542C',
+    bannerPhotoId: '1590874103328-eac38a683ce7',
+    rating: 4.9,
+    reviewsCount: 2340,
+    followers: 12500,
+    verified: true,
+    delivery: 'Livraison 24 h à Abidjan · 48–72 h en Afrique de l’Ouest',
+    collections: ['Sacs', 'Accessoires', 'Nouveautés'],
+  },
+  {
+    id: 'mode-afrique',
+    name: 'Mode Afrique',
+    city: 'Dakar',
+    country: 'Sénégal',
+    description: 'Robes wax, tenues de cérémonie et prêt-à-porter africain contemporain.',
+    logoInitials: 'MA',
+    logoColor: '#B87A3D',
+    bannerPhotoId: '1572804013309-59a88b7e92f1',
+    rating: 4.8,
+    reviewsCount: 1820,
+    followers: 9800,
+    verified: true,
+    delivery: 'Livraison 48 h à Dakar · Expédition internationale',
+    collections: ['Wax', 'Soirée', 'Casual'],
+  },
+  {
+    id: 'tech-zone',
+    name: 'Tech Zone',
+    city: 'Abidjan',
+    country: "Côte d'Ivoire",
+    description: 'Smartphones, objets connectés et accessoires garantis 12 mois.',
+    logoInitials: 'TZ',
+    logoColor: '#191919',
+    bannerPhotoId: '1511707171634-5f897ff02aa9',
+    rating: 4.7,
+    reviewsCount: 3105,
+    followers: 15200,
+    verified: true,
+    delivery: 'Livraison express 24 h · Retrait en boutique',
+    collections: ['Smartphones', 'Montres', 'Accessoires'],
+  },
+  {
+    id: 'audio-plus',
+    name: 'Audio Plus',
+    city: 'Lomé',
+    country: 'Togo',
+    description: 'Casques, enceintes et tout l’univers du son.',
+    logoInitials: 'AP',
+    logoColor: '#58351F',
+    bannerPhotoId: '1505740420928-5e560c06d30e',
+    rating: 4.6,
+    reviewsCount: 640,
+    followers: 4100,
+    verified: false,
+    delivery: 'Livraison 48–72 h au Togo et au Bénin',
+    collections: ['Casques', 'Enceintes'],
+  },
+  {
+    id: 'belle-parfums',
+    name: 'Belle & Parfums',
+    city: 'Douala',
+    country: 'Cameroun',
+    description: 'Parfums, soins et cosmétiques authentiques.',
+    logoInitials: 'BP',
+    logoColor: '#B87A3D',
+    bannerPhotoId: '1588405748880-12d1d2a59f75',
+    rating: 4.8,
+    reviewsCount: 980,
+    followers: 6700,
+    verified: true,
+    delivery: 'Livraison 48 h à Douala et Yaoundé',
+    collections: ['Parfums', 'Soins'],
+  },
+  {
+    id: 'maison-moderne',
+    name: 'Maison Moderne',
+    city: 'Abidjan',
+    country: "Côte d'Ivoire",
+    description: 'Mobilier et décoration au design chaleureux.',
+    logoInitials: 'MM',
+    logoColor: '#8A542C',
+    bannerPhotoId: '1555041469-a586c61ea9bc',
+    rating: 4.7,
+    reviewsCount: 410,
+    followers: 3900,
+    verified: true,
+    delivery: 'Livraison et montage sous 5 jours',
+    collections: ['Salon', 'Luminaires'],
+  },
+  {
+    id: 'street-style-ci',
+    name: 'Street Style CI',
+    city: 'Abidjan',
+    country: "Côte d'Ivoire",
+    description: 'Sneakers et chaussures tendance.',
+    logoInitials: 'SS',
+    logoColor: '#191919',
+    bannerPhotoId: '1560769629-975ec94e6a86',
+    rating: 4.5,
+    reviewsCount: 720,
+    followers: 5200,
+    verified: false,
+    delivery: 'Livraison 24–48 h à Abidjan',
+    collections: ['Sneakers', 'Escarpins'],
+  },
+  {
+    id: 'marche-frais',
+    name: 'Marché Frais Abidjan',
+    city: 'Abidjan',
+    country: "Côte d'Ivoire",
+    description: 'Fruits et légumes frais livrés le jour même.',
+    logoInitials: 'MF',
+    logoColor: '#6B7F3A',
+    bannerPhotoId: '1610832958506-aa56368176cf',
+    rating: 4.6,
+    reviewsCount: 530,
+    followers: 2800,
+    verified: true,
+    delivery: 'Livraison le jour même avant 18 h',
+    collections: ['Fruits', 'Paniers'],
+  },
+  {
+    id: 'bijoux-akwaba',
+    name: 'Bijoux Akwaba',
+    city: 'Accra',
+    country: 'Ghana',
+    description: 'Bijoux fins et perles de culture.',
+    logoInitials: 'BA',
+    logoColor: '#B87A3D',
+    bannerPhotoId: '1515562141207-7a88fb7ce338',
+    rating: 4.9,
+    reviewsCount: 310,
+    followers: 2100,
+    verified: true,
+    delivery: 'Livraison sécurisée 3–5 jours',
+    collections: ['Colliers'],
+  },
+  {
+    id: 'sport-pro',
+    name: 'Sport Pro Dakar',
+    city: 'Dakar',
+    country: 'Sénégal',
+    description: 'Équipements de football et de fitness.',
+    logoInitials: 'SP',
+    logoColor: '#58351F',
+    bannerPhotoId: '1579952363873-27f3bade9f55',
+    rating: 4.5,
+    reviewsCount: 260,
+    followers: 1900,
+    verified: false,
+    delivery: 'Livraison 48 h à Dakar',
+    collections: ['Football'],
+  },
+];
+
+const CLOTHING_SIZES = ['S', 'M', 'L', 'XL'];
+const SHOE_SIZES = ['38', '39', '40', '41', '42'];
+
+/**
+ * L'ordre des 6 premiers produits reproduit la maquette :
+ * gauche = sac (carré), casque, canapé — droite = robe (verticale), parfum, baskets.
+ */
+type BaseProduct = Omit<Product, 'id' | 'createdRank'> & { key: string };
+
+const BASE_PRODUCTS: BaseProduct[] = [
+  { key: 'sac-cuir', name: 'Sac à main en cuir', price: 25000, oldPrice: 32000, categoryId: 'mode', storeId: 'elegance-ci', photoId: '1590874103328-eac38a683ce7', aspect: 1.0, rating: 4.8, reviewsCount: 214, description: 'Sac à main en cuir pleine fleur, fermoir doré et bandoulière amovible. Fabrication artisanale.' },
+  { key: 'robe-wax', name: 'Robe longue élégante', price: 18900, categoryId: 'mode', storeId: 'mode-afrique', photoId: '1572804013309-59a88b7e92f1', aspect: 1.48, rating: 4.9, reviewsCount: 320, sizes: CLOTHING_SIZES, description: 'Robe en wax 100 % coton, coupe évasée et ceinture assortie. Taille normalement.' },
+  { key: 'casque', name: 'Casque sans fil', price: 18500, categoryId: 'electronique', storeId: 'audio-plus', photoId: '1583394838336-acd977736f90', aspect: 0.78, rating: 4.6, reviewsCount: 158, description: 'Casque circum-auriculaire, 30 h d’autonomie, réduction de bruit et micro intégré.' },
+  { key: 'parfum', name: 'Parfum féminin 100 ml', price: 12000, categoryId: 'beaute', storeId: 'belle-parfums', photoId: '1588405748880-12d1d2a59f75', aspect: 1.05, rating: 4.7, reviewsCount: 96, description: 'Eau de parfum aux notes ambrées et florales. Flacon de 100 ml.' },
+  { key: 'canape', name: 'Canapé 3 places', price: 185000, categoryId: 'maison', storeId: 'maison-moderne', photoId: '1555041469-a586c61ea9bc', aspect: 0.68, rating: 4.8, reviewsCount: 41, description: 'Canapé en velours, pieds en bois massif. Livraison et montage inclus à Abidjan.' },
+  { key: 'baskets', name: 'Baskets tendance', price: 29000, oldPrice: 35000, categoryId: 'mode', storeId: 'street-style-ci', photoId: '1560769629-975ec94e6a86', aspect: 0.82, rating: 4.5, reviewsCount: 188, sizes: SHOE_SIZES, description: 'Sneakers légères à semelle confort, idéales au quotidien.' },
+  { key: 'smartphone', name: 'Smartphone 128 Go', price: 109000, oldPrice: 129000, categoryId: 'electronique', storeId: 'tech-zone', photoId: '1511707171634-5f897ff02aa9', aspect: 1.15, rating: 4.7, reviewsCount: 402, description: 'Écran 6,1", 128 Go, double SIM. Garantie 12 mois.' },
+  { key: 'montre', name: 'Montre connectée', price: 35000, oldPrice: 42000, categoryId: 'electronique', storeId: 'tech-zone', photoId: '1523275335684-37898b6baf30', aspect: 0.9, rating: 4.4, reviewsCount: 133, description: 'Suivi d’activité, notifications et autonomie de 7 jours.' },
+  { key: 'robe-soiree', name: 'Robe de soirée rouge', price: 24900, categoryId: 'mode', storeId: 'mode-afrique', photoId: '1595777457583-95e059d581b8', aspect: 1.4, rating: 4.9, reviewsCount: 98, sizes: CLOTHING_SIZES, description: 'Robe longue fluide pour vos cérémonies et soirées.' },
+  { key: 'lunettes', name: 'Lunettes de soleil dorées', price: 9500, oldPrice: 12500, categoryId: 'mode', storeId: 'elegance-ci', photoId: '1511499767150-a48a237f0083', aspect: 0.85, rating: 4.6, reviewsCount: 77, description: 'Monture métal dorée, verres polarisés UV400.' },
+  { key: 'fruits', name: 'Panier de fruits frais', price: 7500, categoryId: 'alimentation', storeId: 'marche-frais', photoId: '1610832958506-aa56368176cf', aspect: 1.0, rating: 4.7, reviewsCount: 64, description: 'Assortiment de fruits de saison, livré le jour même.' },
+  { key: 'fauteuil', name: 'Fauteuil capitonné', price: 65000, categoryId: 'maison', storeId: 'maison-moderne', photoId: '1567538096630-e0c55bd6374c', aspect: 1.25, rating: 4.6, reviewsCount: 22, description: 'Fauteuil crème capitonné, pieds tournés.' },
+  { key: 'collier', name: 'Collier de perles', price: 45000, oldPrice: 52000, categoryId: 'mode', storeId: 'bijoux-akwaba', photoId: '1515562141207-7a88fb7ce338', aspect: 0.95, rating: 4.9, reviewsCount: 51, description: 'Perles de culture, fermoir argent. Livré dans son écrin.' },
+  { key: 'robe-fluide', name: 'Robe longue fluide', price: 21500, categoryId: 'mode', storeId: 'mode-afrique', photoId: '1539008835657-9e8e9680c956', aspect: 1.45, rating: 4.7, reviewsCount: 143, sizes: CLOTHING_SIZES, description: 'Robe portefeuille légère, fendue, parfaite pour l’été.' },
+  { key: 'sac-rouge', name: 'Sac à main rouge', price: 27500, categoryId: 'mode', storeId: 'elegance-ci', photoId: '1584917865442-de89df76afd3', aspect: 1.05, rating: 4.7, reviewsCount: 88, description: 'Sac structuré en cuir rouge, poignée et bandoulière.' },
+  { key: 'ballon', name: 'Ballon de football', price: 15000, oldPrice: 18000, categoryId: 'sport', storeId: 'sport-pro', photoId: '1579952363873-27f3bade9f55', aspect: 0.9, rating: 4.5, reviewsCount: 59, description: 'Ballon taille 5, cousu main, pour terrain synthétique et herbe.' },
+  { key: 'lampe', name: 'Lampe sur pied', price: 22000, categoryId: 'maison', storeId: 'maison-moderne', photoId: '1507473885765-e6ed057f782c', aspect: 1.3, rating: 4.4, reviewsCount: 18, description: 'Lampadaire en métal gris anthracite, tête orientable.' },
+  { key: 'casque-jaune', name: 'Casque audio Bass', price: 22500, oldPrice: 26500, categoryId: 'electronique', storeId: 'audio-plus', photoId: '1505740420928-5e560c06d30e', aspect: 0.8, rating: 4.5, reviewsCount: 112, description: 'Basses profondes, pliable, câble et Bluetooth.' },
+  { key: 'robe-blanche', name: 'Robe blanche bohème', price: 16500, categoryId: 'mode', storeId: 'mode-afrique', photoId: '1515372039744-b8f02a3ae446', aspect: 1.35, rating: 4.6, reviewsCount: 67, sizes: CLOTHING_SIZES, description: 'Robe courte à volants, épaules dénudées.' },
+  { key: 'pochette', name: 'Pochette rose', price: 14900, categoryId: 'mode', storeId: 'elegance-ci', photoId: '1566150905458-1bf1fc113f0d', aspect: 0.9, rating: 4.5, reviewsCount: 39, description: 'Pochette de soirée avec chaîne argentée.' },
+  { key: 'escarpins', name: 'Escarpins imprimés', price: 19900, categoryId: 'mode', storeId: 'street-style-ci', photoId: '1543163521-1bf539c55dd2', aspect: 1.0, rating: 4.4, reviewsCount: 26, sizes: SHOE_SIZES, description: 'Escarpins pointus à motif floral, talon 10 cm.' },
+];
+
+/** Catalogue simulé côté « serveur » : 3 séries des produits de base (63 articles). */
+export const DEMO_CATALOG: Product[] = Array.from({ length: 3 }).flatMap((_, series) =>
+  BASE_PRODUCTS.map(({ key, ...p }, i) => ({
+    ...p,
+    id: series === 0 ? key : `${key}-${series + 1}`,
+    createdRank: series * BASE_PRODUCTS.length + i,
+  })),
+);
+
+export const BANNERS: Banner[] = [
+  {
+    id: 'collections',
+    title: 'Nouvelles\nCollections',
+    subtitle: 'Mode • Beauté • Maison • Tech',
+    cta: 'Découvrir',
+    photoId: '1531123897727-8f129e1688ce',
+    focusX: 0.85,
+    link: { pathname: '/search', params: { sort: 'relevance' } },
+  },
+  {
+    id: 'wax',
+    title: 'L’élégance\ndu wax',
+    subtitle: 'Robes & tenues de créateurs',
+    cta: 'Voir la mode',
+    photoId: '1572804013309-59a88b7e92f1',
+    focusX: 0.8,
+    link: { pathname: '/search', params: { category: 'mode' } },
+  },
+  {
+    id: 'promo',
+    title: 'Jusqu’à\n-25 %',
+    subtitle: 'Sélection de promotions',
+    cta: 'J’en profite',
+    photoId: '1590874103328-eac38a683ce7',
+    focusX: 0.8,
+    link: { pathname: '/search', params: { promo: '1' } },
+  },
+  {
+    id: 'maison',
+    title: 'Maison\nchaleureuse',
+    subtitle: 'Canapés • Luminaires • Déco',
+    cta: 'Découvrir',
+    photoId: '1555041469-a586c61ea9bc',
+    focusX: 0.7,
+    link: { pathname: '/search', params: { category: 'maison' } },
+  },
+  {
+    id: 'beaute',
+    title: 'Rituels\nbeauté',
+    subtitle: 'Parfums & soins authentiques',
+    cta: 'Découvrir',
+    photoId: '1588405748880-12d1d2a59f75',
+    focusX: 0.75,
+    link: { pathname: '/search', params: { category: 'beaute' } },
+  },
+];
+
+export const POPULAR_SEARCHES = ['Robe wax', 'Sac en cuir', 'Smartphone', 'Parfum', 'Baskets', 'Canapé'];
+
+export const DEMO_NOTIFICATIONS = [
+  { id: 'n1', title: 'Votre commande est en route', body: 'Commande #MM24867 — livraison prévue aujourd’hui, 16 h – 18 h.', time: 'Il y a 12 min' },
+  { id: 'n2', title: 'Baisse de prix -22 %', body: 'Le « Sac à main en cuir » de Boutique Élégance CI est en promotion.', time: 'Il y a 2 h' },
+  { id: 'n3', title: 'Nouvelle collection', body: 'Mode Afrique vient de publier 12 nouvelles robes wax.', time: 'Hier' },
+];

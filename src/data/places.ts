@@ -1,0 +1,22 @@
+/** Villes proposées à la création de boutique (liste extensible). */
+export const CITIES: { city: string; country: string }[] = [
+  { city: 'Abidjan', country: "Côte d'Ivoire" },
+  { city: 'Bouaké', country: "Côte d'Ivoire" },
+  { city: 'Yamoussoukro', country: "Côte d'Ivoire" },
+  { city: 'San-Pédro', country: "Côte d'Ivoire" },
+  { city: 'Dakar', country: 'Sénégal' },
+  { city: 'Thiès', country: 'Sénégal' },
+  { city: 'Saint-Louis', country: 'Sénégal' },
+  { city: 'Douala', country: 'Cameroun' },
+  { city: 'Yaoundé', country: 'Cameroun' },
+  { city: 'Cotonou', country: 'Bénin' },
+  { city: 'Porto-Novo', country: 'Bénin' },
+  { city: 'Lomé', country: 'Togo' },
+  { city: 'Ouagadougou', country: 'Burkina Faso' },
+  { city: 'Bamako', country: 'Mali' },
+  { city: 'Conakry', country: 'Guinée' },
+  { city: 'Libreville', country: 'Gabon' },
+  { city: 'Kinshasa', country: 'RD Congo' },
+  { city: 'Accra', country: 'Ghana' },
+  { city: 'Lagos', country: 'Nigeria' },
+];

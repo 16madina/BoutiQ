@@ -1,0 +1,85 @@
+import {
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_600SemiBold,
+  DMSans_700Bold,
+  DMSans_800ExtraBold,
+  useFonts,
+} from '@expo-google-fonts/dm-sans';
+import { PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
+import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
+import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+import { colors } from '@/theme';
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
+SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
+
+export default function RootLayout() {
+  const [loaded, fontError] = useFonts({
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_600SemiBold,
+    DMSans_700Bold,
+    DMSans_800ExtraBold,
+    PlayfairDisplay_700Bold,
+  });
+
+  useEffect(() => {
+    if (loaded || fontError) SplashScreen.hideAsync().catch(() => {});
+  }, [loaded, fontError]);
+
+  if (!loaded && !fontError) return null;
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar style="dark" />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
+          gestureEnabled: true,
+          fullScreenGestureEnabled: true,
+        }}
+      >
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="product/[id]" />
+        <Stack.Screen name="store/[id]" />
+        <Stack.Screen name="search" options={{ animation: 'fade' }} />
+        <Stack.Screen name="cart" />
+        <Stack.Screen name="notifications" />
+        <Stack.Screen name="account" />
+        {/* Module vendeur */}
+        <Stack.Screen name="auth" options={{ presentation: 'modal', gestureEnabled: true }} />
+        <Stack.Screen name="open-store" />
+        <Stack.Screen name="seller" options={{ animation: 'fade', gestureEnabled: false }} />
+        <Stack.Screen name="product-editor" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="verification" />
+        <Stack.Screen
+          name="select"
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: [0.55, 0.92],
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 28,
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
+        <Stack.Screen
+          name="filters"
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: [0.62, 0.95],
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 28,
+            contentStyle: { backgroundColor: colors.surface },
+          }}
+        />
+      </Stack>
+    </GestureHandlerRootView>
+  );
+}

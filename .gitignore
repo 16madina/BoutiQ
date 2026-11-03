@@ -1,0 +1,12 @@
+node_modules/
+.expo/
+dist/
+web-build/
+ios/
+android/
+*.log
+.env*.local
+
+# Réglages locaux (chemins propres à cette machine)
+.claude/
+.DS_Store
