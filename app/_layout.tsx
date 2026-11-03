@@ -14,6 +14,7 @@ import * as SystemUI from 'expo-system-ui';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { syncRemoteCatalog } from '@/api/remoteCatalog';
 import { colors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -32,6 +33,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded || fontError) SplashScreen.hideAsync().catch(() => {});
   }, [loaded, fontError]);
+
+  // Catalogue réel (Supabase) chargé en arrière-plan ; la démo reste visible en attendant.
+  useEffect(() => {
+    syncRemoteCatalog();
+  }, []);
 
   if (!loaded && !fontError) return null;
 

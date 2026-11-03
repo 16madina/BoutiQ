@@ -3,6 +3,7 @@
  * Aujourd'hui : simulation d'un serveur (latence + pagination) sur les données de démo.
  * Demain : remplacer le corps de ces fonctions par des appels HTTP — les écrans ne changent pas.
  */
+import { remoteProducts, remoteStore, remoteStores } from '@/api/remoteCatalog';
 import { getSellerPublicProducts, getSellerPublicStore, isSellerStoreVerified } from '@/api/sellerCatalog';
 import { CATEGORIES, DEMO_CATALOG, STORES } from '@/data/demo';
 import { DEMO_STOCK, STOREFRONT_EXTRA_PRODUCTS } from '@/data/storefronts';
@@ -39,7 +40,7 @@ export function baseKey(id: string): string {
 const categoryById = new Map(CATEGORIES.map((c) => [c.id, c]));
 
 export function getStore(id: string): Store | undefined {
-  return storeById.get(id) ?? getSellerPublicStore(id);
+  return storeById.get(id) ?? getSellerPublicStore(id) ?? remoteStore(id);
 }
 
 /**
@@ -58,10 +59,13 @@ const STOREFRONT_CATALOG: Product[] = [...STOREFRONT_EXTRA_PRODUCTS, ...DEMO_WIT
 
 function catalogFor(q: ProductQuery): Product[] {
   const sellerProducts = getSellerPublicProducts();
-  if (q.storefront) return [...sellerProducts, ...STOREFRONT_CATALOG];
-  if (sellerProducts.length === 0) return DEMO_WITH_STOCK;
+  const remote = remoteProducts();
+  if (q.storefront) return [...remote, ...sellerProducts, ...STOREFRONT_CATALOG];
+  // Produits réels (Supabase) : dans les flux généraux seulement si la boutique est vérifiée.
+  const remoteVisible = remote.filter((p) => p.salesEnabled);
+  if (sellerProducts.length === 0) return remoteVisible.length ? [...remoteVisible, ...DEMO_WITH_STOCK] : DEMO_WITH_STOCK;
   const visible = isSellerStoreVerified() || (q.storeId != null && sellerProducts.some((p) => p.storeId === q.storeId));
-  return visible ? [...sellerProducts, ...DEMO_WITH_STOCK] : DEMO_WITH_STOCK;
+  return visible ? [...remoteVisible, ...sellerProducts, ...DEMO_WITH_STOCK] : [...remoteVisible, ...DEMO_WITH_STOCK];
 }
 
 export function getCategory(id: string): Category | undefined {
@@ -129,13 +133,14 @@ export function peekProduct(id: string): Product | undefined {
   return (
     DEMO_WITH_STOCK.find((p) => p.id === id) ??
     STOREFRONT_EXTRA_PRODUCTS.find((p) => p.id === id) ??
-    getSellerPublicProducts().find((p) => p.id === id)
+    getSellerPublicProducts().find((p) => p.id === id) ??
+    remoteProducts().find((p) => p.id === id)
   );
 }
 
 export function peekProducts(ids: string[]): Product[] {
   const set = new Set(ids);
-  return [...getSellerPublicProducts(), ...STOREFRONT_EXTRA_PRODUCTS, ...DEMO_WITH_STOCK].filter((p) => set.has(p.id));
+  return [...remoteProducts(), ...getSellerPublicProducts(), ...STOREFRONT_EXTRA_PRODUCTS, ...DEMO_WITH_STOCK].filter((p) => set.has(p.id));
 }
 
 /** Lecture synchrone des produits d'une vitrine (sections Nouveautés, Promotions…). */
@@ -150,7 +155,7 @@ export function searchStores(query: string): Store[] {
   const needle = normalize(query);
   if (!needle) return [];
   const own = getSellerPublicStore(useSeller.getState().store?.slug ?? '');
-  return [...(own ? [own] : []), ...STORES].filter((s) =>
+  return [...(own ? [own] : []), ...remoteStores().filter((s) => s.id !== own?.id), ...STORES].filter((s) =>
     normalize(`${s.name} ${s.city} ${s.description}`).includes(needle),
   );
 }

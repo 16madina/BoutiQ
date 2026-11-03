@@ -6,6 +6,7 @@
  * Demain : une requête Supabase (stores + storefront_settings + store_collections).
  */
 import { getStore, peekProducts, storefrontProducts } from '@/api/catalog';
+import { remoteCollections, remoteStorefront } from '@/api/remoteCatalog';
 import { storeUrl } from '@/config/links';
 import { DEMO_STOREFRONTS } from '@/data/storefronts';
 import { buildPalette, TEMPLATES, templateForCategory } from '@/storefront/templates';
@@ -73,7 +74,8 @@ export function getStorefront(storeId: string): Storefront | undefined {
       })
       .filter((c) => c.count > 0);
   } else {
-    const demo = DEMO_STOREFRONTS[store.id];
+    // Réglages : boutique de démo, sinon boutique réelle (Supabase), sinon modèle par défaut.
+    const demo = DEMO_STOREFRONTS[store.id] ?? remoteStorefront(store.id);
     const template = demo?.template ?? templateForCategory(mainCategory(all));
     settings = {
       template,
@@ -82,7 +84,14 @@ export function getStorefront(storeId: string): Storefront | undefined {
       featuredProductIds: demo?.featuredProductIds ?? [],
       contactPhone: demo?.contactPhone,
     };
-    collections = (demo?.collections ?? [])
+    const demoCollections = DEMO_STOREFRONTS[store.id]?.collections ?? [];
+    const remote = remoteCollections(store.id)
+      .map((c) => {
+        const items = all.filter((p) => p.collection === c.name);
+        return { id: c.id, name: c.name, coverUri: c.coverUri ?? (items[0] ? productImageUri(items[0], 360, 1.3) : undefined), count: items.length };
+      })
+      .filter((c) => c.count > 0);
+    collections = remote.length ? remote : demoCollections
       .map((c) => ({
         id: c.name,
         name: c.name,

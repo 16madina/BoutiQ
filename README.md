@@ -120,3 +120,30 @@ Vitrines de démo à essayer : `mode-afrique` (Mode), `elegance-ci` (Mode, choco
 
 Prochaine étape : **Studio Boutique** (choisir le modèle, changer les couleurs, ajouter une photo,
 mettre un produit en avant, aperçu en direct), qui écrira dans `SellerStore.storefront`.
+
+## Supabase (connecté)
+
+Projet **BoutiQ** dans l'organisation **kidi+** : `ddfnbjdsszopriydvhaf` (Paris, eu-west-3). Distinct du projet Kidi+.
+
+Migrations appliquées (dans cet ordre) :
+1. `20261103120000_seller_module.sql` : boutiques, vendeurs, collections, produits, photos, abonnés, vues, commandes, RLS, stockage (`store-media` public, `seller-documents` privé).
+2. `20261104090000_storefront.sql` : réglages de vitrine + vue `storefront_public`.
+3. `20261104100000_security_hardening.sql` : fonctions RLS déplacées dans un schéma `private` non exposé, nombre d'abonnés public, index, une seule politique de lecture par table.
+
+Configuration de l'app : copier `.env.example` en `.env.local` (clé **publishable** uniquement, jamais `service_role`).
+Sans ces variables, l'app reste en mode démo.
+
+```
+src/lib/supabase.ts         Client (session persistée), URL publique des fichiers store-media
+src/types/database.ts       Types générés depuis le schéma
+src/api/remoteCatalog.ts    Lecture des vitrines, produits publiés et collections (ajoutés à la démo)
+```
+
+Les boutiques et produits réels apparaissent automatiquement : sur leur vitrine dès la publication,
+dans l'accueil et la recherche une fois la boutique vérifiée.
+
+**Reste à faire pour écrire dans la base :**
+1. Activer la connexion par téléphone : Supabase → Authentication → Sign In / Providers → Phone,
+   avec un fournisseur SMS (Twilio, Vonage, MessageBird…).
+2. Remplacer la session de démo (`useAuth`) par `signInWithOtp` / `verifyOtp`.
+3. Enregistrer la boutique, les produits et les photos du vendeur dans Supabase (aujourd'hui sur l'appareil).

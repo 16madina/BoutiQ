@@ -6,6 +6,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { storefrontProducts } from '@/api/catalog';
+import { useRemoteCatalog } from '@/api/remoteCatalog';
 import { getStorefront, getStorefrontSections } from '@/api/storefront';
 import { CircleIconButton } from '@/components/CircleIconButton';
 import { EmptyState } from '@/components/EmptyState';
@@ -43,9 +44,10 @@ export default function StoreScreen() {
   // La vitrine se met à jour quand le vendeur modifie sa boutique sur l'appareil.
   const ownStore = useSeller((s) => s.store);
   const ownProducts = useSeller((s) => s.products);
-  // getStorefront lit la boutique locale : on recalcule quand elle change.
+  const remoteSyncedAt = useRemoteCatalog((s) => s.syncedAt);
+  // getStorefront lit la boutique locale et le catalogue Supabase : on recalcule quand ils changent.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const sf = useMemo(() => getStorefront(id), [id, ownStore, ownProducts]);
+  const sf = useMemo(() => getStorefront(id), [id, ownStore, ownProducts, remoteSyncedAt]);
   const sections = useMemo(() => (sf ? getStorefrontSections(sf) : null), [sf]);
 
   const [search, setSearch] = useState('');

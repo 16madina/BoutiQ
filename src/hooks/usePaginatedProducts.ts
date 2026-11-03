@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { fetchProducts } from '@/api/catalog';
+import { useRemoteCatalog } from '@/api/remoteCatalog';
 import type { Product, ProductQuery } from '@/types';
 
 type Status = 'loading' | 'ready' | 'error';
@@ -20,7 +21,9 @@ export function usePaginatedProducts(query: ProductQuery) {
 
   const pageRef = useRef(0);
   const inFlight = useRef<AbortController | null>(null);
-  const queryKey = JSON.stringify(query);
+  // Recharge une fois quand le catalogue réel (Supabase) arrive, s'il contient des produits.
+  const remoteVersion = useRemoteCatalog((s) => (s.products.length ? s.syncedAt : undefined));
+  const queryKey = JSON.stringify(query) + (remoteVersion ?? '');
   const queryRef = useRef(query);
   queryRef.current = query;
 
