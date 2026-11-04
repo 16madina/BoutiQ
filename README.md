@@ -101,25 +101,45 @@ Page `app/store/[id].tsx` (même route : les liens existants restent valides). L
 Coups de cœur · Collections illustrées · Nouveautés · Promotions · catalogue complet en Masonry avec
 recherche limitée à la boutique et filtres (catégorie, prix, disponibilité, promotions, tri).
 
-**5 modèles** (`src/storefront/templates.ts`) : Mode et accessoires, Beauté et cosmétiques, Électronique,
-Maison et décoration, Boutique généraliste. Chaque modèle règle la bannière, les titres, la forme des
-collections et les arrondis. Chaque vendeur choisit sa couleur ; la palette garde des textes lisibles.
-Changer de modèle ou de couleur ne touche pas aux produits (réglages séparés : `SellerStore.storefront`).
+**6 modèles prêts à l'emploi** (`src/storefront/templates.ts`), d'après la maquette « Les 6 modèles de boutiques
+BoutiQ » — mêmes données boutique / produits / commandes, présentation différente :
+
+| Modèle | En-tête | Rayons | Cartes produits | Exemple |
+|---|---|---|---|---|
+| Éditorial Élégance | nom en serif dans la barre, collage de photos, grand titre centré | grandes cartes photo | portrait | `mode-afrique` |
+| Mode & Accessoires | photo sombre en diaporama, logo + nom en haut, titre + « Explorer » | icônes rondes | portrait | `elegance-ci` |
+| Beauté & Cosmétiques | (inchangé) photo puis logo et nom centrés | photos rondes | grille best-sellers | `belle-parfums` |
+| Électronique | photo en diaporama puis bloc sombre (logo, nom, boutons) | vignettes photo carrées | produit phare sombre + carrousel | `tech-zone` |
+| Alimentation | photo encadrée en diaporama, identité, services (ville, livraison) | vignettes photo | grille 2 × 2 + carrousel | `marche-frais` |
+| Généraliste | tons terracotta : logo + nom centrés, photo d'ambiance, « Explorer les rayons » | grille 3 × 2 | carte claire | `maison-moderne` |
+
+La bannière est un **diaporama** : le vendeur ajoute jusqu'à 5 photos (`SellerStore.banners`,
+`storefront_settings.hero_paths`). Le bouton de la bannière, la loupe et « Voir tout » mènent au catalogue.
+Les rayons sont illustrés automatiquement d'après leur nom (`src/storefront/collectionIcons.ts`).
+Suivre / Contacter / Partager : mêmes trois boutons sur toutes les vitrines.
+
+Chaque modèle a aussi ses titres de sections, ses collections suggérées et sa couleur conseillée.
+Les statistiques sont une ligne discrète sous le nom. Le message promotionnel n'apparaît que si le vendeur
+l'écrit, et les promotions ne montrent que de vrais prix barrés. Une boutique sans produit affiche un état vide
+(aucun faux produit).
+
+**Création** : l'étape 3 propose le modèle adapté à la catégorie (accepter ou en choisir un autre) ;
+les collections sont facultatives.
+
+**Personnaliser ma boutique** (`app/customize.tsx`, accessible depuis l'accueil vendeur, l'onglet Boutique et
+l'écran « Boutique prête ») : aperçu en direct de la vraie vitrine + onglets Modèle, Couleur, Textes et photos
+(logo, bannière, nom, description, accroche, message promotionnel), Collections (ajout, ordre), Vedettes (6 max).
+Bouton « Modèle initial » et « Enregistrer » ; quitter sans enregistrer demande confirmation.
+Pas de constructeur libre ni de glisser-déposer.
 
 ```
 src/types/storefront.ts         Types purs (réutilisables par une vitrine web)
-src/storefront/templates.ts     Modèles + calcul des couleurs (sans dépendance React Native)
-src/api/storefront.ts           getStorefront / getStorefrontSections
-src/components/storefront/      StoreHero, StoreSections, StoreCatalogFilters, StoreContactShare, StoreSheet
+src/storefront/templates.ts     5 modèles + calcul des couleurs (sans dépendance React Native)
+src/api/storefront.ts           getStorefront / buildOwnStorefront (aperçu) / getStorefrontSections
+src/components/storefront/      StoreHero, StorefrontBody, StoreSections, TemplatePicker, filtres, contact, partage
 src/data/storefronts.ts         ⚠️ Démo : réglages des vitrines + produits visibles uniquement sur leur vitrine
-supabase/migrations/20261104090000_storefront.sql   storefront_settings + vue storefront_public (NON appliqué)
 ```
 
-Vitrines de démo à essayer : `mode-afrique` (Mode), `elegance-ci` (Mode, chocolat), `belle-parfums` (Beauté),
-`tech-zone` (Électronique), `maison-moderne` (Maison), `marche-frais` (Généraliste).
-
-Prochaine étape : **Studio Boutique** (choisir le modèle, changer les couleurs, ajouter une photo,
-mettre un produit en avant, aperçu en direct), qui écrira dans `SellerStore.storefront`.
 
 ## Supabase (connecté)
 
@@ -129,6 +149,8 @@ Migrations appliquées (dans cet ordre) :
 1. `20261103120000_seller_module.sql` : boutiques, vendeurs, collections, produits, photos, abonnés, vues, commandes, RLS, stockage (`store-media` public, `seller-documents` privé).
 2. `20261104090000_storefront.sql` : réglages de vitrine + vue `storefront_public`.
 3. `20261104100000_security_hardening.sql` : fonctions RLS déplacées dans un schéma `private` non exposé, nombre d'abonnés public, index, une seule politique de lecture par table.
+4. `20261105090000_storefront_templates.sql` : modèle « maison » renommé « alimentation », message promotionnel (`promo_message`) exposé dans `storefront_public`.
+5. `20261105120000_storefront_editorial_slides.sql` : modèle « editorial », photos du diaporama (`hero_paths`).
 
 Configuration de l'app : copier `.env.example` en `.env.local` (clé **publishable** uniquement, jamais `service_role`).
 Sans ces variables, l'app reste en mode démo.
@@ -147,3 +169,5 @@ dans l'accueil et la recherche une fois la boutique vérifiée.
    avec un fournisseur SMS (Twilio, Vonage, MessageBird…).
 2. Remplacer la session de démo (`useAuth`) par `signInWithOtp` / `verifyOtp`.
 3. Enregistrer la boutique, les produits et les photos du vendeur dans Supabase (aujourd'hui sur l'appareil).
+   Les réglages de « Personnaliser ma boutique » iront dans `storefront_settings` (modèle, couleur, accroche,
+   message promo) et `products.featured_position` (vedettes) — les colonnes existent déjà.

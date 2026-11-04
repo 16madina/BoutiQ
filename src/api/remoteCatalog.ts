@@ -7,7 +7,8 @@ import { create } from 'zustand';
 
 import { storeMediaUrl, supabase } from '@/lib/supabase';
 import type { CategoryId, Product, Store } from '@/types';
-import type { StorefrontSettings, StorefrontTemplateId } from '@/types/storefront';
+import { normalizeTemplateId } from '@/storefront/templates';
+import type { StorefrontSettings } from '@/types/storefront';
 
 const CATEGORY_IDS: CategoryId[] = ['mode', 'electronique', 'maison', 'beaute', 'alimentation', 'sport'];
 const asCategory = (c: string | null | undefined): CategoryId => (CATEGORY_IDS.includes(c as CategoryId) ? (c as CategoryId) : 'mode');
@@ -27,6 +28,8 @@ interface RemoteCatalogState {
   collections: RemoteCollection[];
   /** Réglages de vitrine, par identifiant de boutique (= adresse publique). */
   storefronts: Record<string, StorefrontSettings>;
+  /** Photos du diaporama, par boutique (bannière puis photos supplémentaires). */
+  heroImages: Record<string, string[]>;
   syncedAt?: string;
 }
 
@@ -36,6 +39,7 @@ export const useRemoteCatalog = create<RemoteCatalogState>(() => ({
   products: [],
   collections: [],
   storefronts: {},
+  heroImages: {},
 }));
 
 function initials(name: string) {
@@ -70,6 +74,7 @@ export async function syncRemoteCatalog(): Promise<void> {
     const salesById = new Map<string, boolean>();
     const stores: Store[] = [];
     const storefronts: Record<string, StorefrontSettings> = {};
+    const heroImages: Record<string, string[]> = {};
 
     for (const s of storesRes.data) {
       if (!s.id || !s.slug || !s.name) continue;
@@ -94,10 +99,14 @@ export async function syncRemoteCatalog(): Promise<void> {
         delivery: 'Livraison à convenir avec le vendeur',
         collections: [],
       });
+      heroImages[s.slug] = [s.banner_path, ...(s.hero_paths ?? [])]
+        .map((path) => storeMediaUrl(path))
+        .filter((u): u is string => !!u);
       storefronts[s.slug] = {
-        template: (s.template ?? 'generaliste') as StorefrontTemplateId,
+        template: normalizeTemplateId(s.template),
         accentColor: s.accent_color ?? '#B87A3D',
         tagline: s.tagline ?? undefined,
+        promoMessage: s.promo_message ?? undefined,
         featuredProductIds: [],
         contactPhone: s.contact_phone ?? undefined,
       };
@@ -143,6 +152,7 @@ export async function syncRemoteCatalog(): Promise<void> {
       products,
       collections,
       storefronts,
+      heroImages,
       syncedAt: new Date().toISOString(),
     });
   } catch (e) {
@@ -155,4 +165,9 @@ export const remoteStore = (id: string) => useRemoteCatalog.getState().stores.fi
 export const remoteProducts = () => useRemoteCatalog.getState().products;
 export const remoteStores = () => useRemoteCatalog.getState().stores;
 export const remoteStorefront = (id: string) => useRemoteCatalog.getState().storefronts[id];
+/** Diaporama d'une boutique Supabase ; undefined si la boutique n'en vient pas. */
+export function remoteHeroImages(id: string) {
+  const list = useRemoteCatalog.getState().heroImages[id];
+  return list?.length ? list.map((uri) => ({ uri })) : undefined;
+}
 export const remoteCollections = (storeId: string) => useRemoteCatalog.getState().collections.filter((c) => c.storeId === storeId);

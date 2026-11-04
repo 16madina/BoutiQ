@@ -23,10 +23,13 @@ export function CollectionsEditor({
   value,
   onChange,
   categoryId,
+  suggestions: suggested,
 }: {
   value: string[];
   onChange: (v: string[]) => void;
   categoryId?: CategoryId;
+  /** Suggestions du modèle de boutique (prioritaires sur celles de la catégorie). */
+  suggestions?: string[];
 }) {
   const [text, setText] = useState('');
   const add = (name: string) => {
@@ -36,7 +39,7 @@ export function CollectionsEditor({
     onChange([...value, n]);
     setText('');
   };
-  const suggestions = (categoryId ? SUGGESTIONS[categoryId] : SUGGESTIONS.mode).filter(
+  const suggestions = (suggested ?? (categoryId ? SUGGESTIONS[categoryId] : SUGGESTIONS.mode)).filter(
     (s) => !value.some((v) => v.toLowerCase() === s.toLowerCase()),
   );
 

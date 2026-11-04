@@ -131,7 +131,14 @@ export default function StoreCreated() {
               setTimeout(() => router.push('/product-editor'), 50);
             }}
           />
-          <ActionRow icon={PaintbrushVertical} label="Personnaliser ma boutique" onPress={() => router.replace('/seller/settings')} />
+          <ActionRow
+            icon={PaintbrushVertical}
+            label="Personnaliser ma boutique"
+            onPress={() => {
+              router.replace('/seller');
+              setTimeout(() => router.push('/customize'), 50);
+            }}
+          />
           <ActionRow icon={Eye} label="Voir ma boutique" onPress={openStore} />
           <Pressable onPress={() => shareOnWhatsApp(storeShareMessage(store.name, store.slug))} style={styles.share} accessibilityRole="button">
             <MessageCircle size={17} color={colors.cognac} strokeWidth={1.8} />

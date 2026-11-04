@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, SearchX, Share2 } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import type { FlashListRef } from '@shopify/flash-list';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { storefrontProducts } from '@/api/catalog';
@@ -22,13 +23,15 @@ import {
 } from '@/components/storefront/StoreCatalogFilters';
 import { StoreContactSheet, StoreShareSheet } from '@/components/storefront/StoreContactShare';
 import { StoreHero } from '@/components/storefront/StoreHero';
-import { CollectionShowcase, ProductRail, StoreSectionTitle } from '@/components/storefront/StoreSections';
+import { StoreSectionTitle } from '@/components/storefront/StoreSections';
+import { StorefrontBody } from '@/components/storefront/StorefrontBody';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { usePaginatedProducts } from '@/hooks/usePaginatedProducts';
+import { useScreenStatusBar } from '@/hooks/useScreenStatusBar';
 import { PRICE_RANGES } from '@/store/useShop';
 import { useSeller } from '@/store/useSeller';
 import { colors, fonts, spacing } from '@/theme';
-import type { ProductQuery } from '@/types';
+import type { Product, ProductQuery } from '@/types';
 import type { StorefrontCollection } from '@/types/storefront';
 
 /**
@@ -55,6 +58,25 @@ export default function StoreScreen() {
   const [collection, setCollection] = useState<StorefrontCollection | null>(null);
   const [filters, setFilters] = useState<StoreFilters>(DEFAULT_STORE_FILTERS);
   const [sheet, setSheet] = useState<'contact' | 'share' | 'filters' | null>(null);
+
+  // Défilement : « Explorer », la loupe et « Voir tout » mènent au catalogue ;
+  // les boutons flottants n'apparaissent qu'une fois la barre du haut sortie de l'écran.
+  const listRef = useRef<FlashListRef<Product>>(null);
+  const catalogY = useRef(0);
+  const [scrolled, setScrolled] = useState(false);
+  // La photo sombre est encore sous la barre d'état tant qu'on n'a pas dépassé la bannière.
+  const [pastHero, setPastHero] = useState(false);
+  // Beauté, Électronique et Alimentation n'ont pas de barre en haut : boutons flottants toujours visibles.
+  const layout = sf?.template.heroLayout;
+  const showFloating = scrolled || layout === 'centered' || layout === 'stacked' || layout === 'inset';
+  // Heure et batterie en blanc sur les bannières photo sombres (Mode, Beauté, Électronique).
+  const darkTop = layout === 'overlay' || layout === 'centered' || layout === 'stacked';
+  useScreenStatusBar(darkTop && !pastHero ? 'light' : 'dark');
+  // Bande claire derrière l'heure et la batterie dès que le contenu passe dessous.
+  const showStatusBackdrop = darkTop ? pastHero : scrolled;
+  const backdropStyle = useAnimatedStyle(() => ({ opacity: withTiming(showStatusBackdrop ? 1 : 0, { duration: 180 }) }), [showStatusBackdrop]);
+  const floatingStyle = useAnimatedStyle(() => ({ opacity: withTiming(showFloating ? 1 : 0, { duration: 180 }) }), [showFloating]);
+  const goToCatalog = () => listRef.current?.scrollToOffset({ offset: Math.max(catalogY.current - insets.top - 56, 0), animated: true });
 
   const productQuery = useMemo<ProductQuery>(() => {
     const range = PRICE_RANGES[filters.priceRange];
@@ -100,49 +122,37 @@ export default function StoreScreen() {
     setFilters(DEFAULT_STORE_FILTERS);
   };
 
+  const empty = sections.total === 0;
   const header = (
     <View>
-      <StoreHero sf={sf} width={width} topInset={insets.top} onContact={() => setSheet('contact')} onShare={() => setSheet('share')} />
+      <StoreHero
+        sf={sf}
+        width={width}
+        topInset={insets.top}
+        onContact={() => setSheet('contact')}
+        onShare={() => setSheet('share')}
+        onExplore={goToCatalog}
+      />
 
-      <View style={styles.sections}>
-        {!filtering && sections.featured.length > 0 && (
-          <Animated.View entering={FadeIn.duration(300)}>
-            <StoreSectionTitle kicker="Sélection de la boutique" title="Coups de cœur" template={template} palette={palette} />
-            <ProductRail products={sections.featured} template={template} palette={palette} size="lg" />
-          </Animated.View>
-        )}
+      <StorefrontBody
+        sf={sf}
+        sections={sections}
+        width={width}
+        filtering={filtering}
+        selectedCollectionId={collection?.id}
+        onSelectCollection={setCollection}
+        onContact={() => setSheet('contact')}
+        onSeeAll={(section) => {
+          if (section === 'deals') setFilters({ ...DEFAULT_STORE_FILTERS, onlyPromo: true });
+          goToCatalog();
+        }}
+      />
 
-        {sf.collections.length > 0 && (
-          <View>
-            <StoreSectionTitle kicker="Collections" title="Explorer la boutique" template={template} palette={palette} />
-            <CollectionShowcase
-              collections={sf.collections}
-              template={template}
-              palette={palette}
-              selectedId={collection?.id}
-              onSelect={setCollection}
-            />
-          </View>
-        )}
-
-        {!filtering && sections.newArrivals.length > 0 && (
-          <Animated.View entering={FadeIn.duration(300)}>
-            <StoreSectionTitle kicker="Nouveau" title="Nouveautés" template={template} palette={palette} />
-            <ProductRail products={sections.newArrivals} template={template} palette={palette} badge="Nouveau" />
-          </Animated.View>
-        )}
-
-        {!filtering && sections.promotions.length > 0 && (
-          <Animated.View entering={FadeIn.duration(300)}>
-            <StoreSectionTitle kicker="Bons plans" title="Promotions" template={template} palette={palette} />
-            <ProductRail products={sections.promotions} template={template} palette={palette} />
-          </Animated.View>
-        )}
-
-        <View style={{ gap: 12 }}>
+      {!empty && (
+        <View style={styles.catalog} onLayout={(e) => (catalogY.current = e.nativeEvent.layout.y)}>
           <StoreSectionTitle
-            kicker="Catalogue"
-            title={collection ? collection.name : 'Tous les articles'}
+            kicker={template.copy.catalog[0]}
+            title={collection ? collection.name : template.copy.catalog[1]}
             template={template}
             palette={palette}
             right={
@@ -165,7 +175,7 @@ export default function StoreScreen() {
             </Text>
           )}
         </View>
-      </View>
+      )}
     </View>
   );
 
@@ -183,26 +193,37 @@ export default function StoreScreen() {
         onRetry={feed.retry}
         ListHeaderComponent={header}
         bottomInset={insets.bottom + 32}
+        listRef={listRef}
+        onScroll={(e) => {
+          const y = e.nativeEvent.contentOffset.y;
+          if (y > 90 !== scrolled) setScrolled(y > 90);
+          const beyond = y > width * (sf?.template.heroRatio ?? 1) * 0.9;
+          if (beyond !== pastHero) setPastHero(beyond);
+        }}
         emptyComponent={
-          <EmptyState
-            compact
-            icon={SearchX}
-            title={filtering ? 'Aucun article ne correspond' : 'Aucun produit publié'}
-            message={filtering ? 'Essayez un autre mot ou retirez un filtre.' : undefined}
-            actionLabel={filtering ? 'Tout afficher' : undefined}
-            onAction={filtering ? clearAll : undefined}
-          />
+          // Boutique sans produit : l'état vide élégant est déjà dans les sections.
+          empty ? null : (
+            <EmptyState
+              compact
+              icon={SearchX}
+              title="Aucun article ne correspond"
+              message="Essayez un autre mot ou retirez un filtre."
+              actionLabel="Tout afficher"
+              onAction={clearAll}
+            />
+          )
         }
       />
 
-      <View style={[styles.topBar, { top: insets.top + 6 }]}>
+      <Animated.View style={[styles.statusBackdrop, { height: insets.top }, backdropStyle]} pointerEvents="none" />
+      <Animated.View style={[styles.topBar, { top: insets.top + 6 }, floatingStyle]} pointerEvents={showFloating ? 'box-none' : 'none'}>
         <CircleIconButton variant="glass" size={42} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} accessibilityLabel="Retour">
           <ChevronLeft size={22} strokeWidth={1.9} color={colors.text} />
         </CircleIconButton>
         <CircleIconButton variant="glass" size={42} onPress={() => setSheet('share')} accessibilityLabel="Partager la boutique">
           <Share2 size={19} strokeWidth={1.8} color={colors.text} />
         </CircleIconButton>
-      </View>
+      </Animated.View>
 
       <StoreContactSheet sf={sf} visible={sheet === 'contact'} onClose={() => setSheet(null)} />
       <StoreShareSheet sf={sf} visible={sheet === 'share'} onClose={() => setSheet(null)} />
@@ -220,8 +241,9 @@ export default function StoreScreen() {
 }
 
 const styles = StyleSheet.create({
-  sections: { paddingTop: 30, paddingBottom: 14, gap: 34 },
+  catalog: { gap: 12, paddingTop: 20, paddingBottom: 14 },
   count: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.textSecondary, paddingBottom: 3 },
   clear: { fontFamily: fonts.semibold, fontSize: 14, paddingHorizontal: spacing.screen, paddingVertical: 4 },
+  statusBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: 'rgba(250,246,240,0.96)' },
   topBar: { position: 'absolute', left: spacing.screen, right: spacing.screen, flexDirection: 'row', justifyContent: 'space-between' },
 });

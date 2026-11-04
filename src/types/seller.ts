@@ -1,5 +1,5 @@
 import type { CategoryId } from '@/types';
-import type { StorefrontSettings } from '@/types/storefront';
+import type { StorefrontSettings, StorefrontTemplateId } from '@/types/storefront';
 
 /**
  * Cycle de vérification :
@@ -30,9 +30,12 @@ export interface SellerStore {
   country: string;
   categoryId: CategoryId;
   logo?: LocalImage;
+  /** Photo principale (= première photo du diaporama). */
   banner?: LocalImage;
+  /** Photos du diaporama de la bannière (5 au plus). Absent = la bannière seule. */
+  banners?: LocalImage[];
   collections: StoreCollection[];
-  /** Réglages de la vitrine (Studio Boutique). Absent = modèle proposé selon la catégorie. */
+  /** Réglages de la vitrine (« Personnaliser ma boutique »). Absent = modèle proposé selon la catégorie. */
   storefront?: Partial<StorefrontSettings>;
   status: VerificationStatus;
   rejectionReason?: string;
@@ -81,7 +84,10 @@ export interface StoreDraft {
   details: SellerDetails;
   logo?: LocalImage;
   banner?: LocalImage;
+  /** Facultatives : le vendeur peut les organiser plus tard. */
   collections: string[];
+  /** Modèle choisi à l'étape 3 (absent = modèle recommandé pour la catégorie). */
+  template?: StorefrontTemplateId;
 }
 
 export type Space = 'buyer' | 'seller';

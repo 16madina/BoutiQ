@@ -8,7 +8,7 @@
  * Photos : Unsplash (licence libre). Prix et stocks fictifs.
  */
 import type { CategoryId, Product } from '@/types';
-import type { StorefrontSettings } from '@/types/storefront';
+import type { StorefrontSettings, StorefrontTemplateId } from '@/types/storefront';
 
 type DemoCollection = { name: string; coverPhotoId: string; productKeys: string[] };
 
@@ -66,14 +66,29 @@ const EXTRA_PRODUCTS: Record<string, ExtraProduct[]> = {
     { key: 'mm-salon', name: 'Ensemble salon table basse', price: 98000, categoryId: 'maison', photoId: '1672345158827-7f4aa9467b49', aspect: 0.75, stock: 0, description: 'Table basse en bois et tapis assorti.' },
     { key: 'mm-canape-gris', name: 'Canapé gris clair', price: 199000, categoryId: 'maison', photoId: '1759722665629-29df6ee4f9a5', aspect: 0.78, stock: 1, description: 'Assise profonde, tissu anti-taches.' },
   ],
+  'marche-frais': [
+    { key: 'mf-mangues', name: 'Mangues Kent (le kilo)', price: 1500, categoryId: 'alimentation', photoId: '1601493700631-2b16ec4b4716', aspect: 1.0, stock: 40, description: 'Mangues mûres à point, chair fondante sans fibres.' },
+    { key: 'mf-ananas', name: 'Ananas pain de sucre', price: 1000, categoryId: 'alimentation', photoId: '1550258987-190a2d41a8ba', aspect: 1.3, stock: 25, description: 'Très sucré, cueilli il y a moins de 48 h.' },
+    { key: 'mf-bananes', name: 'Bananes douces (le régime)', price: 2500, oldPrice: 3000, categoryId: 'alimentation', photoId: '1571771894821-ce9b6c11b08e', aspect: 0.9, stock: 12, description: 'Régime d’environ 2 kg, prêt à consommer.' },
+    { key: 'mf-tomates', name: 'Tomates fraîches (1 kg)', price: 900, categoryId: 'alimentation', photoId: '1592924357228-91a4daadcfea', aspect: 1.1, stock: 30, description: 'Tomates rondes, idéales pour sauces et salades.' },
+    { key: 'mf-carottes', name: 'Carottes (1 kg)', price: 800, categoryId: 'alimentation', photoId: '1589927986089-35812388d1f4', aspect: 0.85, stock: 0, description: 'Carottes croquantes du maraîcher.' },
+    { key: 'mf-pommes-de-terre', name: 'Pommes de terre (2 kg)', price: 1500, oldPrice: 1800, categoryId: 'alimentation', photoId: '1518977676601-b53f82aba655', aspect: 1.0, stock: 18, description: 'Chair ferme, parfaites pour frites et ragoûts.' },
+    { key: 'mf-panier-legumes', name: 'Panier de légumes du jour', price: 6000, categoryId: 'alimentation', photoId: '1557844352-761f2565b576', aspect: 1.1, stock: 8, description: 'Sélection de saison pour 4 personnes, environ 5 kg.' },
+    { key: 'mf-riz', name: 'Riz parfumé (5 kg)', price: 6500, categoryId: 'alimentation', photoId: '1586201375761-83865001e31c', aspect: 0.9, stock: 20, description: 'Riz long grain parfumé, sac de 5 kg.' },
+    { key: 'mf-huile', name: 'Huile d’olive vierge (1 L)', price: 7500, categoryId: 'alimentation', photoId: '1474979266404-7eaacbcd87c5', aspect: 1.25, stock: 10, description: 'Première pression à froid.' },
+    { key: 'mf-epices', name: 'Coffret d’épices', price: 4500, oldPrice: 5500, categoryId: 'alimentation', photoId: '1596040033229-a9821ebd058d', aspect: 1.15, stock: 9, description: 'Curry, piment, gingembre, poivre de Penja et plus.' },
+    { key: 'mf-pain', name: 'Pain de campagne', price: 1200, categoryId: 'alimentation', photoId: '1509440159596-0249088772ff', aspect: 0.85, stock: 15, description: 'Cuit au feu de bois chaque matin.' },
+  ],
 };
 
 /** Réglages de vitrine des boutiques de démonstration. */
-export const DEMO_STOREFRONTS: Record<string, StorefrontSettings & { collections?: DemoCollection[] }> = {
+export const DEMO_STOREFRONTS: Record<string, StorefrontSettings & { collections?: DemoCollection[]; heroPhotoIds?: string[] }> = {
   'mode-afrique': {
-    template: 'mode',
-    accentColor: '#B87A3D',
+    template: 'editorial',
+    heroPhotoIds: ['1572804013309-59a88b7e92f1', '1515372039744-b8f02a3ae446', '1595777457583-95e059d581b8', '1539008835657-9e8e9680c956'],
+    accentColor: '#58351F',
     tagline: 'Le wax, à la manière de Dakar',
+    promoMessage: 'Retouches offertes sur toutes les robes',
     featuredProductIds: ['ma-ensemble-wax', 'robe-wax', 'ma-robe-imprimee'],
     collections: [
       { name: 'Wax', coverPhotoId: '1784160053635-424cf07f567c', productKeys: ['robe-wax', 'ma-ensemble-wax', 'ma-top-wax', 'ma-robe-coloree'] },
@@ -83,7 +98,8 @@ export const DEMO_STOREFRONTS: Record<string, StorefrontSettings & { collections
   },
   'elegance-ci': {
     template: 'mode',
-    accentColor: '#58351F',
+    accentColor: '#B87A3D',
+    heroPhotoIds: ['1511499767150-a48a237f0083', '1590874103328-eac38a683ce7', '1691480250099-a63081ecfcb8'],
     tagline: 'Maroquinerie de créateurs',
     featuredProductIds: ['ec-sac-camel', 'sac-cuir', 'ec-montre'],
     collections: [
@@ -94,7 +110,8 @@ export const DEMO_STOREFRONTS: Record<string, StorefrontSettings & { collections
   },
   'belle-parfums': {
     template: 'beaute',
-    accentColor: '#B0646E',
+    accentColor: '#A8427A',
+    heroPhotoIds: ['1588405748880-12d1d2a59f75', '1512496015851-a90fb38ba796'],
     tagline: 'Soins naturels, beauté authentique',
     featuredProductIds: ['bp-serum', 'parfum', 'bp-creme-karite'],
     collections: [
@@ -105,8 +122,10 @@ export const DEMO_STOREFRONTS: Record<string, StorefrontSettings & { collections
   },
   'tech-zone': {
     template: 'electronique',
-    accentColor: '#2B6CB0',
+    accentColor: '#1F6FD1',
+    heroPhotoIds: ['1511707171634-5f897ff02aa9', '1609692814858-f7cd2f0afa4f', '1592750475338-74b7b21085ab'],
     tagline: 'High-tech garanti 12 mois',
+    promoMessage: 'Garantie 12 mois sur tous les téléphones',
     featuredProductIds: ['tz-phone-blanc', 'smartphone', 'montre'],
     collections: [
       { name: 'Smartphones', coverPhotoId: '1592750475338-74b7b21085ab', productKeys: ['smartphone', 'tz-phone-blanc', 'tz-phone-gris'] },
@@ -115,8 +134,9 @@ export const DEMO_STOREFRONTS: Record<string, StorefrontSettings & { collections
     ],
   },
   'maison-moderne': {
-    template: 'maison',
-    accentColor: '#6B7F5A',
+    template: 'generaliste',
+    heroPhotoIds: ['1555041469-a586c61ea9bc', '1615800001964-5afd0ae8e49a', '1507473885765-e6ed057f782c'],
+    accentColor: '#B0502E',
     tagline: 'Le confort au design chaleureux',
     featuredProductIds: ['mm-canape-cuir', 'canape', 'fauteuil'],
     collections: [
@@ -125,11 +145,29 @@ export const DEMO_STOREFRONTS: Record<string, StorefrontSettings & { collections
     ],
   },
   'marche-frais': {
-    template: 'generaliste',
-    accentColor: '#6B7F3A',
+    template: 'alimentation',
+    accentColor: '#2F8A3A',
+    heroPhotoIds: ['1610832958506-aa56368176cf', '1542838132-92c53300491e', '1488459716781-31db52582fe9'],
     tagline: 'Livré frais le jour même',
-    featuredProductIds: ['fruits'],
+    promoMessage: 'Livraison offerte dès 15 000 FCFA d’achat',
+    featuredProductIds: ['mf-panier-legumes', 'fruits', 'mf-mangues', 'mf-riz'],
+    collections: [
+      { name: 'Fruits', coverPhotoId: '1601493700631-2b16ec4b4716', productKeys: ['fruits', 'mf-mangues', 'mf-ananas', 'mf-bananes'] },
+      { name: 'Légumes', coverPhotoId: '1557844352-761f2565b576', productKeys: ['mf-tomates', 'mf-carottes', 'mf-pommes-de-terre', 'mf-panier-legumes'] },
+      { name: 'Épicerie', coverPhotoId: '1596040033229-a9821ebd058d', productKeys: ['mf-riz', 'mf-huile', 'mf-epices'] },
+      { name: 'Boulangerie', coverPhotoId: '1509440159596-0249088772ff', productKeys: ['mf-pain'] },
+    ],
   },
+};
+
+/** Boutique de démo montrée en exemple pour chaque modèle (bouton « Voir » du sélecteur). */
+export const TEMPLATE_EXAMPLES: Record<StorefrontTemplateId, string> = {
+  editorial: 'mode-afrique',
+  mode: 'elegance-ci',
+  beaute: 'belle-parfums',
+  electronique: 'tech-zone',
+  alimentation: 'marche-frais',
+  generaliste: 'maison-moderne',
 };
 
 /** Produits de démo réservés aux vitrines, au format catalogue. */

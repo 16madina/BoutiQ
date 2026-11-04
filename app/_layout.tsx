@@ -13,9 +13,11 @@ import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { syncRemoteCatalog } from '@/api/remoteCatalog';
 import { colors } from '@/theme';
+import { isPhonePreview, PREVIEW_INSETS } from '@/utils/devicePreview';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
@@ -41,7 +43,7 @@ export default function RootLayout() {
 
   if (!loaded && !fontError) return null;
 
-  return (
+  const app = (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar style="dark" />
       <Stack
@@ -64,6 +66,7 @@ export default function RootLayout() {
         <Stack.Screen name="open-store" />
         <Stack.Screen name="seller" options={{ animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="product-editor" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="customize" options={{ gestureEnabled: false }} />
         <Stack.Screen name="verification" />
         <Stack.Screen
           name="select"
@@ -88,4 +91,7 @@ export default function RootLayout() {
       </Stack>
     </GestureHandlerRootView>
   );
+
+  // Aperçu téléphone (navigateur, développement) : zones de sécurité d'un iPhone.
+  return isPhonePreview ? <SafeAreaInsetsContext.Provider value={PREVIEW_INSETS}>{app}</SafeAreaInsetsContext.Provider> : app;
 }

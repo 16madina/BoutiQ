@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+import { TEMPLATES, templateForCategory } from '@/storefront/templates';
 import { deviceStorage, uid } from '@/store/persist';
 import type {
   SellerDetails,
@@ -21,7 +22,7 @@ export const EMPTY_DRAFT: StoreDraft = {
   country: "Côte d'Ivoire",
   description: '',
   details: EMPTY_DETAILS,
-  collections: ['Nouveautés'],
+  collections: [],
 };
 
 export type VerificationRequirement = 'identity' | 'idDocument' | 'logo' | 'product';
@@ -84,6 +85,7 @@ export const useSeller = create<SellerState>()(
 
       createStoreFromDraft: () => {
         const d = get().draft;
+        const template = d.template ?? templateForCategory(d.categoryId);
         const store: SellerStore = {
           id: uid('store'),
           slug: d.slug,
@@ -95,6 +97,7 @@ export const useSeller = create<SellerState>()(
           logo: d.logo,
           banner: d.banner,
           collections: d.collections.filter(Boolean).map((name) => ({ id: uid('col'), name })),
+          storefront: { template, accentColor: TEMPLATES[template].defaultAccent, featuredProductIds: [] },
           status: 'draft',
           createdAt: new Date().toISOString(),
         };

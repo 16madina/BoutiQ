@@ -4,6 +4,7 @@ import {
   Check,
   ChevronRight,
   Eye,
+  Paintbrush,
   MessageCircle,
   Package,
   ReceiptText,
@@ -17,6 +18,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toPublicStore } from '@/api/sellerCatalog';
+import { resolveOwnSettings } from '@/api/storefront';
 import { useTabBarSpace } from '@/components/FloatingTabBar';
 import { PressableScale } from '@/components/PressableScale';
 import { STATUS_META, StatusBadge } from '@/components/seller/StatusBadge';
@@ -24,6 +26,7 @@ import { SpaceSwitchPill } from '@/components/seller/SpaceSwitch';
 import { StoreAvatar } from '@/components/StoreAvatar';
 import { shareOnWhatsApp, storeShareMessage } from '@/config/links';
 import { useSeller } from '@/store/useSeller';
+import { TEMPLATES } from '@/storefront/templates';
 import { colors, fonts, radii, shadows, spacing, typography } from '@/theme';
 import { formatCount, formatFCFA } from '@/utils/format';
 import { haptics } from '@/utils/haptics';
@@ -65,7 +68,7 @@ export default function SellerDashboard() {
   const published = products.filter((p) => p.status === 'published').length;
   const status = STATUS_META[store.status];
   const checklist = [
-    { done: !!store.logo && !!store.banner, label: 'Ajouter un logo et une bannière', href: '/seller/settings' as Href },
+    { done: !!store.logo && !!store.banner, label: 'Ajouter un logo et une bannière', href: '/customize' as Href },
     { done: published >= 3, label: `Publier 3 produits (${Math.min(published, 3)}/3)`, href: '/product-editor' as Href },
     { done: store.status === 'verified' || store.status === 'pending_review', label: 'Faire vérifier ma boutique', href: '/verification' as Href },
   ];
@@ -104,6 +107,19 @@ export default function SellerDashboard() {
           </View>
           <ChevronRight size={20} color="#EAD5BC" />
         </PressableScale>
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(30).duration(380)} style={styles.section}>
+        <Pressable onPress={() => router.push('/customize')} style={({ pressed }) => [styles.card, styles.customizeRow, pressed && { opacity: 0.85 }]} accessibilityRole="button">
+          <Paintbrush size={21} color={colors.cognac} strokeWidth={1.7} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.customizeTitle}>Personnaliser ma boutique</Text>
+            <Text style={styles.customizeText}>
+              Modèle {TEMPLATES[resolveOwnSettings(store).template].shortLabel} · aperçu en direct
+            </Text>
+          </View>
+          <ChevronRight size={18} color={colors.textSecondary} />
+        </Pressable>
       </Animated.View>
 
       {store.status !== 'verified' && (
@@ -188,6 +204,9 @@ const styles = StyleSheet.create({
   addPlus: { fontFamily: fonts.regular, fontSize: 30, lineHeight: 34, color: colors.white },
   addTitle: { fontFamily: fonts.bold, fontSize: 17.5, color: colors.white },
   addText: { fontFamily: fonts.regular, fontSize: 13, color: '#D9BFA3', marginTop: 2 },
+  customizeRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  customizeTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.text },
+  customizeText: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary, marginTop: 2 },
   verifyCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: radii.lg },
   verifyTitle: { fontFamily: fonts.bold, fontSize: 15 },
   verifyText: { fontFamily: fonts.regular, fontSize: 13, color: '#4A433E', marginTop: 2, lineHeight: 18 },

@@ -7,11 +7,17 @@
  */
 import type { CategoryId } from '@/types';
 
-/** Modèles professionnels proposés au vendeur. */
-export type StorefrontTemplateId = 'mode' | 'beaute' | 'electronique' | 'maison' | 'generaliste';
+/** Les six modèles professionnels proposés au vendeur. */
+export type StorefrontTemplateId = 'editorial' | 'mode' | 'beaute' | 'electronique' | 'alimentation' | 'generaliste';
+
+/** Photo de bannière : URL complète (vendeur, Supabase) ou photo de démo. */
+export interface HeroImage {
+  uri?: string;
+  photoId?: string;
+}
 
 /**
- * Réglages choisis par le vendeur (Studio Boutique).
+ * Réglages choisis par le vendeur (écran « Personnaliser ma boutique »).
  * Changer de modèle ou de couleur ne touche jamais aux produits.
  */
 export interface StorefrontSettings {
@@ -20,6 +26,8 @@ export interface StorefrontSettings {
   accentColor: string;
   /** Phrase d'accroche affichée sur la bannière. */
   tagline?: string;
+  /** Message promotionnel écrit par le vendeur (« Livraison offerte dès 20 000 FCFA »). */
+  promoMessage?: string;
   /** Produits « mis en avant » (identifiants), dans l'ordre choisi. */
   featuredProductIds: string[];
   /** Contact public facultatif (WhatsApp / téléphone), au format international. */
@@ -37,29 +45,65 @@ export interface StorefrontCollection {
   count: number;
 }
 
+/** Sections de la vitrine, placées dans l'ordre propre à chaque modèle. Le catalogue suit toujours. */
+export type StorefrontSectionId = 'promo' | 'collections' | 'featured' | 'new' | 'deals' | 'about';
+
+/** Titres des sections : [petit surtitre, titre]. */
+export type SectionCopy = Record<'featured' | 'new' | 'deals' | 'collections' | 'catalog', [string, string]>;
+
 /** Présentation d'un modèle : tout ce qui change d'un modèle à l'autre. */
 export interface StorefrontTemplate {
   id: StorefrontTemplateId;
   label: string;
-  /** Description simple, pour le Studio. */
+  /** Nom court (sélecteur de modèle). */
+  shortLabel: string;
+  /** Description simple, pour le vendeur. */
   hint: string;
-  /** Catégorie de boutique à laquelle ce modèle est proposé par défaut. */
+  /** Catégories de boutique auxquelles ce modèle est proposé par défaut. */
   defaultFor: CategoryId[];
   /** Hauteur de la bannière par rapport à la largeur de l'écran. */
   heroRatio: number;
   /** Titre de la boutique : serif élégant ou sans-serif net. */
   titleFont: 'serif' | 'sans';
-  /** Disposition de l'en-tête. */
-  heroLayout: 'immersive' | 'stacked';
-  /** Forme des cartes de collection. */
-  collectionShape: 'portrait' | 'round' | 'square' | 'landscape';
+  /**
+   * Disposition de l'en-tête (nom de la boutique dans la barre du haut, sauf « centered ») :
+   * collage = barre claire + collage de photos façon magazine (Éditorial) ;
+   * overlay = grande photo sombre, nom en haut, titre en bas (Mode) ;
+   * centered = photo puis logo et nom centrés (Beauté) ;
+   * stacked = photo puis bloc sombre avec logo, nom et boutons (Électronique) ;
+   * inset = photo encadrée en carte, puis identité et services (Alimentation) ;
+   * banner = barre claire centrée + photo d'ambiance (Généraliste).
+   */
+  heroLayout: 'collage' | 'overlay' | 'centered' | 'stacked' | 'inset' | 'banner';
+  /** Présentation des collections (rayons). */
+  collectionShape: 'photo-card' | 'emoji-circle' | 'round' | 'square' | 'tile' | 'emoji-grid';
+  /**
+   * Style des cartes produits des sections : classic = carrousel de cartes photo
+   * (Beauté, Électronique, Alimentation) ; fashion / clean = cartes deux par deux.
+   */
+  productStyle: 'fashion' | 'classic' | 'clean';
+  /** Présentation des produits vedettes. */
+  featuredStyle: 'editorial' | 'grid' | 'spotlight' | 'rail';
+  /** Titre affiché sur la bannière quand le vendeur n'a pas écrit d'accroche. */
+  heroTitle: string;
+  /** Bouton de la bannière (mène au catalogue). */
+  heroCta: string;
+  /** Petits surtitres au-dessus des titres de sections. */
+  kickers: boolean;
+  /** Ordre des sections avant le catalogue. */
+  sections: StorefrontSectionId[];
+  copy: SectionCopy;
+  /** Collections suggérées au vendeur. */
+  suggestedCollections: string[];
+  /** Exemple de message promotionnel (aide à la saisie, jamais affiché aux clients). */
+  promoExample: string;
   /** Arrondi général des cartes. */
   radius: number;
   /** Couleur proposée par défaut. */
   defaultAccent: string;
-  /** Teintes proposées dans le Studio. */
+  /** Teintes proposées au vendeur. */
   suggestedAccents: string[];
-  /** Fond de l'en-tête pour les modèles sombres (électronique). */
+  /** En-tête et carte vedette sur fond sombre (électronique). */
   dark: boolean;
 }
 

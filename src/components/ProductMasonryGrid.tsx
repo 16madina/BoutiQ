@@ -1,7 +1,7 @@
-import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
+import { FlashList, type FlashListRef, type ListRenderItemInfo } from '@shopify/flash-list';
 import { RefreshCw, WifiOff } from 'lucide-react-native';
-import { useCallback, type ReactElement } from 'react';
-import { ActivityIndicator, RefreshControl, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useCallback, type ReactElement, type RefObject } from 'react';
+import { ActivityIndicator, RefreshControl, StyleSheet, Text, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
 import { EmptyState } from '@/components/EmptyState';
 import { PressableScale } from '@/components/PressableScale';
@@ -25,6 +25,9 @@ export interface MasonryGridProps {
   emptyComponent?: ReactElement | null;
   /** Espace libre sous la grille (barre d'onglets flottante, barre d'action…) */
   bottomInset?: number;
+  /** Pour faire défiler la liste depuis l'écran (ex. « Explorer » → catalogue). */
+  listRef?: RefObject<FlashListRef<Product> | null>;
+  onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }
 
 /** Calcule le nombre de colonnes et la largeur exacte des cartes. */
@@ -57,6 +60,8 @@ export function ProductMasonryGrid({
   ListHeaderComponent,
   emptyComponent,
   bottomInset = 32,
+  listRef,
+  onScroll,
 }: MasonryGridProps) {
   const { columns, gap, cardWidth, containerPadding } = useMasonryMetrics();
 
@@ -114,6 +119,9 @@ export function ProductMasonryGrid({
 
   return (
     <FlashList
+      ref={listRef}
+      onScroll={onScroll}
+      scrollEventThrottle={32}
       data={items}
       masonry
       numColumns={columns}

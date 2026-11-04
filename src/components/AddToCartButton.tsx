@@ -16,10 +16,14 @@ import { haptics } from '@/utils/haptics';
 interface Props {
   productId: string;
   size?: number;
+  /** Couleur de fond (vitrines : couleur de la boutique). */
+  tint?: string;
+  /** Couleur de l'icône. */
+  iconColor?: string;
 }
 
 /** Petit bouton circulaire « ajout au panier » posé sur l'image du produit. */
-export function AddToCartButton({ productId, size = 34 }: Props) {
+export function AddToCartButton({ productId, size = 34, tint, iconColor = colors.text }: Props) {
   const addToCart = useShop((s) => s.addToCart);
   const [added, setAdded] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,6 +58,7 @@ export function AddToCartButton({ productId, size = 34 }: Props) {
       style={[
         styles.button,
         { width: size, height: size, borderRadius: size / 2 },
+        tint ? { backgroundColor: tint } : null,
         added && { backgroundColor: colors.buttonPrimary },
       ]}
     >
@@ -62,9 +67,9 @@ export function AddToCartButton({ productId, size = 34 }: Props) {
           <Check size={iconSize} strokeWidth={2.4} color={colors.white} />
         ) : (
           <View>
-            <ShoppingCart size={iconSize} strokeWidth={1.8} color={colors.text} />
-            <View style={styles.plus}>
-              <Plus size={iconSize * 0.5} strokeWidth={3} color={colors.text} />
+            <ShoppingCart size={iconSize} strokeWidth={1.8} color={iconColor} />
+            <View style={[styles.plus, tint ? { backgroundColor: tint } : null]}>
+              <Plus size={iconSize * 0.5} strokeWidth={3} color={iconColor} />
             </View>
           </View>
         )}

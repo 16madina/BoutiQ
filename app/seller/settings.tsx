@@ -1,19 +1,18 @@
 import { router } from 'expo-router';
-import { ArrowLeftRight, ChevronRight, Link2, MessageCircle, Share2, ShieldCheck } from 'lucide-react-native';
+import { ArrowLeftRight, ChevronRight, Link2, MessageCircle, Paintbrush, Share2, ShieldCheck } from 'lucide-react-native';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { getCategory } from '@/api/catalog';
+import { resolveOwnSettings } from '@/api/storefront';
 import { useTabBarSpace } from '@/components/FloatingTabBar';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { CollectionsEditor } from '@/components/seller/CollectionsEditor';
 import { FormField, SelectField } from '@/components/seller/FormField';
-import { BannerPicker, LogoPicker } from '@/components/seller/ImagePickers';
 import { StatusBadge } from '@/components/seller/StatusBadge';
 import { switchSpace } from '@/components/seller/SpaceSwitch';
 import { shareAnywhere, shareOnWhatsApp, storeDisplayAddress, storeShareMessage } from '@/config/links';
 import { usePicker, usePickerResult } from '@/store/usePicker';
 import { useSeller } from '@/store/useSeller';
-import { uid } from '@/store/persist';
+import { TEMPLATES } from '@/storefront/templates';
 import { colors, fonts, radii, spacing, typography } from '@/theme';
 import type { CategoryId } from '@/types';
 
@@ -69,12 +68,19 @@ export default function SellerSettings() {
           <ChevronRight size={18} color={colors.textSecondary} />
         </Pressable>
 
-        {/* Apparence */}
-        <View style={{ gap: 14 }}>
-          <Text style={typography.h3}>Apparence</Text>
-          <BannerPicker value={store.banner} onChange={(banner) => updateStore({ banner })} />
-          <LogoPicker value={store.logo} onChange={(logo) => updateStore({ logo })} size={88} />
-        </View>
+        {/* Apparence : modèle, couleurs, photos, collections, vedettes */}
+        <Pressable onPress={() => router.push('/customize')} style={[styles.card, styles.rowCard, styles.customize]} accessibilityRole="button">
+          <View style={styles.customizeIcon}>
+            <Paintbrush size={20} color={colors.white} strokeWidth={1.8} />
+          </View>
+          <View style={{ flex: 1, gap: 3 }}>
+            <Text style={[typography.h3, { color: colors.white }]}>Personnaliser ma boutique</Text>
+            <Text style={styles.customizeText}>
+              Modèle {TEMPLATES[resolveOwnSettings(store).template].shortLabel} · couleurs, photos, collections, vedettes
+            </Text>
+          </View>
+          <ChevronRight size={18} color={colors.champagne} />
+        </Pressable>
 
         {/* Informations */}
         <View style={{ gap: spacing.lg }}>
@@ -92,20 +98,6 @@ export default function SellerSettings() {
             value={store.description}
             onChangeText={(description) => updateStore({ description: description.slice(0, 280) })}
             multiline
-          />
-        </View>
-
-        {/* Collections */}
-        <View style={{ gap: 10 }}>
-          <Text style={typography.h3}>Collections</Text>
-          <CollectionsEditor
-            categoryId={store.categoryId}
-            value={store.collections.map((c) => c.name)}
-            onChange={(names) =>
-              updateStore({
-                collections: names.map((name) => store.collections.find((c) => c.name === name) ?? { id: uid('col'), name }),
-              })
-            }
           />
         </View>
 
@@ -142,6 +134,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   card: { padding: 16, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, gap: 12 },
   rowCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  customize: { backgroundColor: colors.buttonPrimary, borderColor: colors.buttonPrimary },
+  customizeIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.caramel, alignItems: 'center', justifyContent: 'center' },
+  customizeText: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.sand, lineHeight: 17 },
   address: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, height: 48, borderRadius: radii.md, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
   addressText: { flex: 1, fontFamily: fonts.medium, fontSize: 14, color: colors.text },
   shareRow: { flexDirection: 'row', gap: 10 },

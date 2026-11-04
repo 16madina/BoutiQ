@@ -8,7 +8,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 type StoreStatus = 'draft' | 'pending_review' | 'verified' | 'rejected' | 'suspended';
 type ProductStatus = 'draft' | 'published';
 type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-type StorefrontTemplate = 'mode' | 'beaute' | 'electronique' | 'maison' | 'generaliste';
+type StorefrontTemplate = 'editorial' | 'mode' | 'beaute' | 'electronique' | 'alimentation' | 'generaliste';
 
 export type Database = {
   __InternalSupabase: { PostgrestVersion: '14.18' };
@@ -121,9 +121,9 @@ export type Database = {
         Relationships: [];
       };
       storefront_settings: {
-        Row: { accent_color: string; contact_phone: string | null; store_id: string; tagline: string | null; template: StorefrontTemplate; updated_at: string };
-        Insert: { accent_color?: string; contact_phone?: string | null; store_id: string; tagline?: string | null; template?: StorefrontTemplate };
-        Update: { accent_color?: string; contact_phone?: string | null; tagline?: string | null; template?: StorefrontTemplate };
+        Row: { accent_color: string; contact_phone: string | null; hero_paths: string[]; promo_message: string | null; store_id: string; tagline: string | null; template: StorefrontTemplate; updated_at: string };
+        Insert: { accent_color?: string; contact_phone?: string | null; hero_paths?: string[]; promo_message?: string | null; store_id: string; tagline?: string | null; template?: StorefrontTemplate };
+        Update: { accent_color?: string; contact_phone?: string | null; hero_paths?: string[]; promo_message?: string | null; tagline?: string | null; template?: StorefrontTemplate };
         Relationships: [];
       };
       stores: {
@@ -179,9 +179,11 @@ export type Database = {
           country: string | null;
           description: string | null;
           followers: number | null;
+          hero_paths: string[] | null;
           id: string | null;
           logo_path: string | null;
           name: string | null;
+          promo_message: string | null;
           sales_enabled: boolean | null;
           slug: string | null;
           tagline: string | null;
