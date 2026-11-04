@@ -4,6 +4,7 @@ import { LayoutDashboard, Package, ReceiptText, Store } from 'lucide-react-nativ
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
+import { pullSellerData } from '@/api/sellerSync';
 import { FloatingTabBar } from '@/components/FloatingTabBar';
 import { useSeller, useSellerHydrated } from '@/store/useSeller';
 import { colors } from '@/theme';
@@ -24,6 +25,11 @@ export default function SellerLayout() {
   useEffect(() => {
     if (store) setSpace('seller');
   }, [store, setSpace]);
+
+  // Relit la boutique et les produits enregistrés en ligne (autre appareil, réinstallation).
+  useEffect(() => {
+    pullSellerData().catch(() => {});
+  }, []);
 
   if (!hydrated) {
     return (

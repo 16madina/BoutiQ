@@ -58,6 +58,11 @@ export interface Product {
   createdRank: number;
   /** Quantité disponible (absent = en stock). 0 = épuisé. */
   stock?: number;
+  colors?: string[];
+  /** Variantes vendues à part, avec leur prix. */
+  variants?: { label: string; price: number; stock: number }[];
+  /** Livraison propre au produit. */
+  deliveryNote?: string;
 }
 
 export type SortOption = 'relevance' | 'price_asc' | 'price_desc' | 'discount';

@@ -1,3 +1,4 @@
+import { randomUUID } from 'expo-crypto';
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -5,6 +6,7 @@ import { persist } from 'zustand/middleware';
 import { TEMPLATES, templateForCategory } from '@/storefront/templates';
 import { deviceStorage, uid } from '@/store/persist';
 import type {
+  ProductForm,
   SellerDetails,
   SellerProduct,
   SellerStore,
@@ -48,6 +50,8 @@ interface SellerState {
   details: SellerDetails | null;
   products: SellerProduct[];
   storeViews: number;
+  /** « Ajouter un produit » en cours, gardé même si l'app se ferme. */
+  productDraft: ProductForm | null;
 
   setSpace: (space: Space) => void;
   updateDraft: (patch: Partial<StoreDraft>) => void;
@@ -59,7 +63,13 @@ interface SellerState {
   updateDetails: (patch: Partial<SellerDetails>) => void;
 
   saveProduct: (product: Omit<SellerProduct, 'id' | 'storeId' | 'createdAt'> & { id?: string }) => SellerProduct;
+  patchProduct: (id: string, patch: Partial<SellerProduct>) => void;
+  /** Ancien identifiant local (« prd_… ») remplacé par un UUID avant l'envoi en ligne. */
+  renameProduct: (oldId: string, newId: string) => void;
   deleteProduct: (id: string) => void;
+  setProductDraft: (draft: ProductForm | null) => void;
+  /** Données relues depuis Supabase (autre appareil, réinstallation). */
+  hydrateFromServer: (store: SellerStore | null, products: SellerProduct[]) => void;
 
   missingForVerification: () => VerificationRequirement[];
   submitForReview: () => VerificationRequirement[];
@@ -77,6 +87,7 @@ export const useSeller = create<SellerState>()(
       details: null,
       products: [],
       storeViews: 0,
+      productDraft: null,
 
       setSpace: (space) => set({ space }),
       updateDraft: (patch) => set((s) => ({ draft: { ...s.draft, ...patch } })),
@@ -114,14 +125,53 @@ export const useSeller = create<SellerState>()(
         const existing = input.id ? get().products.find((p) => p.id === input.id) : undefined;
         const product: SellerProduct = existing
           ? { ...existing, ...input, id: existing.id }
-          : { ...input, id: uid('prd'), storeId: store.id, createdAt: new Date().toISOString() };
+          : { ...input, id: input.id ?? randomUUID(), storeId: store.id, createdAt: new Date().toISOString() };
         set((s) => ({
           products: existing ? s.products.map((p) => (p.id === product.id ? product : p)) : [product, ...s.products],
         }));
         return product;
       },
 
-      deleteProduct: (id) => set((s) => ({ products: s.products.filter((p) => p.id !== id) })),
+      patchProduct: (id, patch) => set((s) => ({ products: s.products.map((p) => (p.id === id ? { ...p, ...patch } : p)) })),
+
+      renameProduct: (oldId, newId) =>
+        set((s) => ({
+          products: s.products.map((p) => (p.id === oldId ? { ...p, id: newId } : p)),
+          store:
+            s.store && s.store.storefront?.featuredProductIds
+              ? {
+                  ...s.store,
+                  storefront: {
+                    ...s.store.storefront,
+                    featuredProductIds: s.store.storefront.featuredProductIds.map((f) => (f === oldId ? newId : f)),
+                  },
+                }
+              : s.store,
+        })),
+
+      deleteProduct: (id) =>
+        set((s) => ({
+          products: s.products.filter((p) => p.id !== id),
+          store:
+            s.store && s.store.storefront?.featuredProductIds
+              ? { ...s.store, storefront: { ...s.store.storefront, featuredProductIds: s.store.storefront.featuredProductIds.filter((f) => f !== id) } }
+              : s.store,
+        })),
+
+      setProductDraft: (productDraft) => set({ productDraft }),
+
+      hydrateFromServer: (store, products) =>
+        set((s) => {
+          // Les modifications locales pas encore envoyées gardent la priorité.
+          const unsynced = s.products.filter((p) => p.sync?.state !== 'synced');
+          const serverIds = new Set(products.map((p) => p.id));
+          const merged = [
+            ...unsynced,
+            ...products.filter((p) => !unsynced.some((u) => u.id === p.id)),
+          ].filter((p) => serverIds.has(p.id) || p.sync?.state !== 'synced');
+          merged.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+          return { store: s.store ?? store, products: merged, space: s.store || store ? 'seller' : s.space };
+        }),
 
       missingForVerification: () => {
         const { store, details, products } = get();

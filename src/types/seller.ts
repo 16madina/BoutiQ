@@ -14,15 +14,21 @@ export interface LocalImage {
   uri: string;
   width: number;
   height: number;
+  /** Chemin dans le stockage Supabase (dossier store-media) une fois la photo envoyée. */
+  remotePath?: string;
 }
 
 export interface StoreCollection {
   id: string;
   name: string;
+  /** Identifiant de la collection dans Supabase. */
+  remoteId?: string;
 }
 
 export interface SellerStore {
   id: string;
+  /** Identifiant de la boutique dans Supabase (créée au premier enregistrement en ligne). */
+  remoteId?: string;
   slug: string;
   name: string;
   description: string;
@@ -55,9 +61,27 @@ export interface SellerDetails {
   idDocument?: LocalImage;
 }
 
-export type ProductStatus = 'draft' | 'published';
+/** draft = brouillon jamais publié ; published = en vente ; hidden = retiré de la vente par le vendeur. */
+export type ProductStatus = 'draft' | 'published' | 'hidden';
+
+/** Variante vendue à part (taille, couleur, contenance…) avec son prix. */
+export interface ProductVariant {
+  id: string;
+  label: string;
+  price: number;
+  stock: number;
+}
+
+/** État de l'enregistrement en ligne (Supabase). */
+export interface ProductSync {
+  state: 'pending' | 'synced' | 'error';
+  /** Message simple à afficher au vendeur. */
+  error?: string;
+  syncedAt?: string;
+}
 
 export interface SellerProduct {
+  /** Identifiant UUID, le même sur l'appareil et dans Supabase. */
   id: string;
   storeId: string;
   name: string;
@@ -69,8 +93,17 @@ export interface SellerProduct {
   photos: LocalImage[];
   stock: number;
   status: ProductStatus;
+  sizes?: string[];
+  colors?: string[];
+  variants?: ProductVariant[];
+  /** Informations de livraison propres au produit. */
+  deliveryNote?: string;
+  sync?: ProductSync;
   createdAt: string;
 }
+
+/** Saisie en cours dans « Ajouter un produit » (brouillon gardé sur l'appareil). */
+export type ProductForm = Omit<SellerProduct, 'storeId' | 'createdAt' | 'sync'>;
 
 /** Brouillon du parcours de création, sauvegardé à chaque saisie. */
 export interface StoreDraft {

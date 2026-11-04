@@ -141,6 +141,39 @@ src/data/storefronts.ts         ⚠️ Démo : réglages des vitrines + produits
 ```
 
 
+## Livraison 4 : ajout de produits ultra-simple
+
+Écran `app/product-editor.tsx` (« Ajouter un produit » / « Modifier le produit ») :
+1. **Photos** : grands boutons « Prendre une photo » et « Choisir dans ma galerie », 6 photos au plus,
+   flèches pour changer l'ordre (la première est la couverture).
+2. **Nom et prix** (obligatoires, devise de la boutique : FCFA, GNF pour la Guinée).
+3. **Catégorie** proposée d'après le nom (« Mangues » → Alimentation), modifiable d'un toucher.
+4. **Plus de détails** (facultatif) : description, quantité / épuisé, tailles, couleurs, variantes avec prix
+   et stock, ancien prix (promotion), collection, livraison propre au produit.
+
+Brouillon gardé automatiquement, aperçu client, messages simples (« Il manque : le prix »), anti double
+publication (même identifiant sur l'appareil et en ligne → mise à jour, jamais de doublon), écran de
+confirmation. « Mes produits » : En vente / Masqué / Brouillon / Épuisé, modifier, masquer, remettre en vente,
+supprimer (avec confirmation), tirer pour actualiser depuis Supabase.
+
+**Enregistrement en ligne** (`src/api/sellerSync.ts`, `src/lib/media.ts`) :
+- connexion anonyme Supabase du vendeur (à activer : Authentication → Allow anonymous sign-ins) ;
+  le numéro de téléphone pourra y être rattaché plus tard (`updateUser({ phone })`) sans perdre la boutique ;
+- boutique créée une seule fois dans `stores` (+ réglages de vitrine, collections, informations vendeur) ;
+- photos compressées (JPEG, 1600 px max) envoyées dans `store-media/<boutique>/products/<produit>/` ;
+- nouvelles tentatives automatiques en cas de coupure ; sans réseau, le produit reste sur le téléphone
+  (« Sur ce téléphone seulement · Envoyer ») ;
+- relecture de la boutique et de tous les produits du vendeur à l'ouverture de l'espace vendeur.
+
+**« Remplir avec l'IA »** (`src/api/productAssistant.ts`) : prêt mais désactivé. S'active seulement si
+`EXPO_PUBLIC_PRODUCT_ASSISTANT_URL` pointe vers un service BoutiQ (ex. Edge Function qui garde la clé d'IA).
+Ne propose que nom, catégorie et description ; jamais de prix, marque, composition ni caractéristiques.
+
+Testé de bout en bout sur Supabase : publication (2 photos compressées), affichage dans la boutique,
+modification du prix, masquer / remettre en vente, rupture de stock, brouillon sans prix, suppression
+(fiche + photos), coupure réseau puis nouvel essai, relecture après effacement local ; un visiteur voit
+les produits en vente mais ne peut ni modifier ni déposer de photo (RLS).
+
 ## Supabase (connecté)
 
 Projet **BoutiQ** dans l'organisation **kidi+** : `ddfnbjdsszopriydvhaf` (Paris, eu-west-3). Distinct du projet Kidi+.
@@ -151,6 +184,8 @@ Migrations appliquées (dans cet ordre) :
 3. `20261104100000_security_hardening.sql` : fonctions RLS déplacées dans un schéma `private` non exposé, nombre d'abonnés public, index, une seule politique de lecture par table.
 4. `20261105090000_storefront_templates.sql` : modèle « maison » renommé « alimentation », message promotionnel (`promo_message`) exposé dans `storefront_public`.
 5. `20261105120000_storefront_editorial_slides.sql` : modèle « editorial », photos du diaporama (`hero_paths`).
+6. `20261106090000_product_module.sql` : statut « hidden », tailles, couleurs, variantes, livraison du produit.
+7. `20261106100000_product_drafts.sql` : un brouillon peut être enregistré sans nom ni prix.
 
 Configuration de l'app : copier `.env.example` en `.env.local` (clé **publishable** uniquement, jamais `service_role`).
 Sans ces variables, l'app reste en mode démo.

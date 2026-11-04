@@ -143,6 +143,10 @@ export async function syncRemoteCatalog(): Promise<void> {
         createdRank: -2000 + i,
         salesEnabled: salesById.get(p.store_id) ?? false,
         stock: p.stock,
+        sizes: p.sizes?.length ? p.sizes : undefined,
+        colors: p.colors?.length ? p.colors : undefined,
+        variants: Array.isArray(p.variants) && p.variants.length ? (p.variants as unknown as Product['variants']) : undefined,
+        deliveryNote: p.delivery_note ?? undefined,
       });
     });
 

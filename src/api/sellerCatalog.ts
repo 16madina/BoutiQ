@@ -54,7 +54,11 @@ export function toPublicProduct(p: SellerProduct, store: SellerStore, rank: numb
     reviewsCount: 0,
     createdRank: -1000 + rank,
     salesEnabled: store.status === 'verified',
-    stock: p.stock,
+    stock: p.variants?.length ? p.variants.reduce((n, v) => n + v.stock, 0) : p.stock,
+    sizes: p.sizes?.length ? p.sizes : undefined,
+    colors: p.colors?.length ? p.colors : undefined,
+    variants: p.variants?.length ? p.variants : undefined,
+    deliveryNote: p.deliveryNote || undefined,
   };
 }
 

@@ -6,7 +6,7 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 type StoreStatus = 'draft' | 'pending_review' | 'verified' | 'rejected' | 'suspended';
-type ProductStatus = 'draft' | 'published';
+type ProductStatus = 'draft' | 'published' | 'hidden';
 type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 type StorefrontTemplate = 'editorial' | 'mode' | 'beaute' | 'electronique' | 'alimentation' | 'generaliste';
 
@@ -38,32 +38,40 @@ export type Database = {
         Row: {
           category: string;
           collection_id: string | null;
+          colors: string[];
           created_at: string;
+          delivery_note: string | null;
           description: string;
           featured_position: number | null;
           id: string;
           name: string;
           old_price: number | null;
           price: number;
+          sizes: string[];
           status: ProductStatus;
           stock: number;
           store_id: string;
           updated_at: string;
+          variants: Json;
         };
         Insert: {
           category: string;
           collection_id?: string | null;
+          colors?: string[];
           created_at?: string;
+          delivery_note?: string | null;
           description?: string;
           featured_position?: number | null;
           id?: string;
           name: string;
           old_price?: number | null;
           price: number;
+          sizes?: string[];
           status?: ProductStatus;
           stock?: number;
           store_id: string;
           updated_at?: string;
+          variants?: Json;
         };
         Update: Partial<Database['public']['Tables']['products']['Insert']>;
         Relationships: [

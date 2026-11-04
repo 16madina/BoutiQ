@@ -32,6 +32,20 @@ export async function pickImage(aspect: [number, number]): Promise<LocalImage | 
   return { uri: a.uri, width: a.width || 1000, height: a.height || 1000 };
 }
 
+/** Appareil photo (sur le web : sélection de fichier avec capture). */
+export async function takePhoto(): Promise<LocalImage | null> {
+  haptics.light();
+  const p = await ImagePicker.requestCameraPermissionsAsync();
+  if (!p.granted) {
+    Alert.alert('Accès à l’appareil photo', 'Autorisez l’appareil photo dans les réglages, ou choisissez une photo dans votre galerie.');
+    return null;
+  }
+  const res = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85 });
+  if (res.canceled || !res.assets[0]) return null;
+  const a = res.assets[0];
+  return { uri: a.uri, width: a.width || 1000, height: a.height || 1000 };
+}
+
 export async function pickImages(limit: number): Promise<LocalImage[]> {
   haptics.light();
   if (limit <= 0 || !(await ensurePermission())) return [];

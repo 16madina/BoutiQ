@@ -6,7 +6,9 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { syncStoreExtras } from '@/api/sellerSync';
 import { buildOwnStorefront, getStorefrontSections, resolveOwnSettings } from '@/api/storefront';
+import { supabase } from '@/lib/supabase';
 import { CircleIconButton } from '@/components/CircleIconButton';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { CollectionsEditor } from '@/components/seller/CollectionsEditor';
@@ -86,6 +88,12 @@ function Editor({ saved }: { saved: SellerStore }) {
       collections: draft.collections,
       storefront: draft.storefront,
     });
+    // Boutique déjà en ligne : réglages, collections et photos mis à jour dans Supabase.
+    const remoteId = useSeller.getState().store?.remoteId;
+    if (remoteId) {
+      syncStoreExtras(remoteId).catch(() => {});
+      supabase?.from('stores').update({ name: draft.name.trim() || saved.name, description: draft.description.slice(0, 280) }).eq('id', remoteId).then(() => {});
+    }
   };
 
   const leave = () => (router.canGoBack() ? router.back() : router.replace('/seller'));

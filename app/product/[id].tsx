@@ -20,7 +20,7 @@ import { StoreAvatar } from '@/components/StoreAvatar';
 import { StoreLink } from '@/components/StoreLink';
 import { useShop } from '@/store/useShop';
 import { colors, fonts, radii, shadows, spacing, typography } from '@/theme';
-import { formatCount } from '@/utils/format';
+import { formatCount, formatFCFA } from '@/utils/format';
 import { haptics } from '@/utils/haptics';
 import { photoUrl, productImageUri } from '@/utils/images';
 
@@ -75,15 +75,43 @@ export default function ProductScreen() {
 
         <Animated.View entering={FadeInDown.duration(380)} style={styles.sheet}>
           <Text style={typography.h1}>{product.name}</Text>
-          <View style={styles.rating}>
-            <Star size={15} color={colors.caramel} fill={colors.caramel} />
-            <Text style={styles.ratingText}>
-              {product.rating.toFixed(1).replace('.', ',')} <Text style={typography.caption}>({product.reviewsCount} avis)</Text>
-            </Text>
-          </View>
-          <View style={{ marginTop: spacing.md }}>
+          {product.reviewsCount > 0 && (
+            <View style={styles.rating}>
+              <Star size={15} color={colors.caramel} fill={colors.caramel} />
+              <Text style={styles.ratingText}>
+                {product.rating.toFixed(1).replace('.', ',')} <Text style={typography.caption}>({product.reviewsCount} avis)</Text>
+              </Text>
+            </View>
+          )}
+          <View style={{ marginTop: spacing.md, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <ProductPrice price={product.price} oldPrice={product.oldPrice} size="lg" />
+            {product.stock === 0 && <Text style={styles.soldOut}>Épuisé</Text>}
           </View>
+
+          {!!product.variants?.length && (
+            <View style={styles.block}>
+              <Text style={styles.blockTitle}>Choix et prix</Text>
+              {product.variants.map((v) => (
+                <View key={v.label} style={styles.variantRow}>
+                  <Text style={styles.description}>{v.label}</Text>
+                  <Text style={styles.variantPrice}>{v.stock > 0 ? formatFCFA(v.price) : 'Épuisé'}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {!!product.colors?.length && (
+            <View style={styles.block}>
+              <Text style={styles.blockTitle}>Couleurs disponibles</Text>
+              <View style={styles.sizes}>
+                {product.colors.map((c) => (
+                  <View key={c} style={styles.size}>
+                    <Text style={styles.sizeText}>{c}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
 
           {needsSize && (
             <View style={styles.block}>
@@ -126,14 +154,16 @@ export default function ProductScreen() {
             </Pressable>
           )}
 
-          <View style={styles.block}>
-            <Text style={styles.blockTitle}>Description</Text>
-            <Text style={styles.description}>{product.description}</Text>
-          </View>
+          {!!product.description && (
+            <View style={styles.block}>
+              <Text style={styles.blockTitle}>Description</Text>
+              <Text style={styles.description}>{product.description}</Text>
+            </View>
+          )}
 
           <View style={styles.infoRow}>
             <Truck size={20} strokeWidth={1.6} color={colors.cognac} />
-            <Text style={styles.infoText}>{store?.delivery ?? 'Livraison locale et régionale'}</Text>
+            <Text style={styles.infoText}>{product.deliveryNote ?? store?.delivery ?? 'Livraison locale et régionale'}</Text>
           </View>
           <View style={styles.infoRow}>
             <ShieldCheck size={20} strokeWidth={1.6} color={colors.cognac} />
@@ -181,6 +211,9 @@ export default function ProductScreen() {
 }
 
 const styles = StyleSheet.create({
+  soldOut: { fontFamily: fonts.bold, fontSize: 12.5, color: colors.white, backgroundColor: colors.text, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, overflow: 'hidden' },
+  variantRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  variantPrice: { fontFamily: fonts.bold, fontSize: 15, color: colors.text },
   screen: { flex: 1, backgroundColor: colors.background },
   sheet: {
     marginTop: -26,

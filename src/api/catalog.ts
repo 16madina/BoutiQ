@@ -59,7 +59,10 @@ const STOREFRONT_CATALOG: Product[] = [...STOREFRONT_EXTRA_PRODUCTS, ...DEMO_WIT
 
 function catalogFor(q: ProductQuery): Product[] {
   const sellerProducts = getSellerPublicProducts();
-  const remote = remoteProducts();
+  // La boutique du vendeur connecté est lue sur l'appareil (source à jour) :
+  // sa copie Supabase est écartée pour ne jamais afficher un produit deux fois.
+  const ownSlug = useSeller.getState().store?.slug;
+  const remote = ownSlug ? remoteProducts().filter((p) => p.storeId !== ownSlug) : remoteProducts();
   if (q.storefront) return [...remote, ...sellerProducts, ...STOREFRONT_CATALOG];
   // Produits réels (Supabase) : dans les flux généraux seulement si la boutique est vérifiée.
   const remoteVisible = remote.filter((p) => p.salesEnabled);
