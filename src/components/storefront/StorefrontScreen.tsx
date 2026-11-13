@@ -35,6 +35,7 @@ import { useSeller } from '@/store/useSeller';
 import { colors, fonts, spacing } from '@/theme';
 import type { Product, ProductQuery } from '@/types';
 import type { StorefrontCollection } from '@/types/storefront';
+import { useHistory } from '@/store/useHistory';
 
 /**
  * Vitrine publique d'une boutique : bannière, identité, actions, collections,
@@ -45,6 +46,10 @@ import type { StorefrontCollection } from '@/types/storefront';
  * (sous la barre du vendeur) : le retour devient « Personnaliser ».
  */
 export function StorefrontScreen({ id, owner, bottomInset }: { id: string; owner?: boolean; bottomInset?: number }) {
+  // Sert à la section « Parce que vous avez consulté… » de l'accueil.
+  useEffect(() => {
+    if (id && !owner) useHistory.getState().viewStore(id);
+  }, [id, owner]);
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   // Côté vendeur, la barre « Ma boutique » occupe déjà le haut de l'écran.

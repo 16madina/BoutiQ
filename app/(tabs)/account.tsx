@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import {
+  Megaphone,
   BadgeCheck,
   Bell,
   Camera,
@@ -304,6 +305,7 @@ export default function AccountScreen() {
             <MenuRow icon={Bell} label="Notifications" count={unread} onPress={() => router.navigate('/notifications')} />
             <MenuRow icon={Package} label="Mes informations et livraison" onPress={() => router.navigate('/profile' as Href)} />
             {admin && <MenuRow icon={ShieldCheck} label="Modération des boutiques" onPress={() => router.navigate('/moderation')} />}
+            {admin && <MenuRow icon={Megaphone} label="Annonces et fil d’accueil" onPress={() => router.navigate('/moderation-ads' as Href)} />}
           </Animated.View>
 
           {session ? (

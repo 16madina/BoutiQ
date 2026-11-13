@@ -5,6 +5,7 @@ import {
   Images,
   LayoutList,
   Link2,
+  Megaphone,
   MessageCircle,
   Palette,
   Share2,
@@ -170,9 +171,10 @@ export default function SellerSettings() {
 
         {/* Offres */}
         <View style={{ gap: 10 }}>
-          <Text style={typography.h3}>Offres</Text>
+          <Text style={typography.h3}>Offres et visibilité</Text>
           <View style={styles.list}>
-            <Row icon={TicketPercent} title="Codes promo" detail="Offrez une réduction à vos clients" onPress={() => router.push('/promo-codes')} last />
+            <Row icon={TicketPercent} title="Codes promo" detail="Offrez une réduction à vos clients" onPress={() => router.push('/promo-codes')} />
+            <Row icon={Megaphone} title="Publicité et visibilité" detail="Mettez un produit ou votre boutique en avant sur l’accueil" onPress={() => router.push('/ads')} last />
           </View>
         </View>
 

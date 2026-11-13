@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { BadgeCheck, Bell, Package, Sparkles, TriangleAlert, Truck } from 'lucide-react-native';
+import { BadgeCheck, Bell, Megaphone, Package, Sparkles, TriangleAlert, Truck } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
@@ -14,6 +14,8 @@ const ICONS: Record<string, typeof Bell> = {
   product_new: Sparkles,
   store_verified: BadgeCheck,
   store_rejected: TriangleAlert,
+  ad_active: Megaphone,
+  ad_rejected: TriangleAlert,
 };
 
 /**
@@ -44,6 +46,8 @@ export function NotificationsList({ bottomInset = 32 }: { bottomInset?: number }
   const open = (n: AppNotification) => {
     // Décision de la modération : le vendeur retrouve le détail dans « Vérification ».
     if (n.kind === 'store_verified' || n.kind === 'store_rejected') router.push('/verification');
+    // Décision sur une annonce : le vendeur retrouve le détail dans « Publicité et visibilité ».
+    else if (n.kind === 'ad_active' || n.kind === 'ad_rejected') router.push('/ads');
     else if (n.orderId) router.push({ pathname: '/order/[id]', params: { id: n.orderId } });
     else if (n.productId) router.push({ pathname: '/product/[id]', params: { id: n.productId } });
     else if (n.storeId) {

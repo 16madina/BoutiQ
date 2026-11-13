@@ -34,6 +34,56 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      // Annonces et réglages (migration 20261113150000_home_feed_ads) : ajouté à la main.
+      ad_campaigns: {
+        Row: {
+          billing_model: string;
+          budget: number;
+          clicks: number;
+          countries: string[];
+          created_at: string;
+          cta: string;
+          ends_at: string | null;
+          headline: string;
+          id: string;
+          impressions: number;
+          kind: string;
+          product_id: string | null;
+          rejection_reason: string | null;
+          spent: number;
+          starts_at: string;
+          status: 'pending_review' | 'active' | 'paused' | 'rejected' | 'ended';
+          store_id: string;
+          tagline: string | null;
+        };
+        Insert: {
+          store_id: string;
+          headline: string;
+          kind?: string;
+          product_id?: string | null;
+          tagline?: string | null;
+          cta?: string;
+          billing_model?: string;
+          budget?: number;
+          countries?: string[];
+          starts_at?: string;
+          ends_at?: string | null;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      ad_events: {
+        Row: { campaign_id: string; created_at: string; id: number; kind: string; user_id: string | null };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      app_config: {
+        Row: { key: string; updated_at: string; value: Json };
+        Insert: { key: string; value: Json; updated_at?: string };
+        Update: { value?: Json; updated_at?: string };
+        Relationships: [];
+      };
       // Codes promo (migration 20261113120000_promo_codes) : ajouté à la main.
       promo_codes: {
         Row: {
@@ -382,6 +432,8 @@ export type Database = {
       };
       admin_review_store: { Args: { p_store_id: string; p_decision: Enums['store_status']; p_reason?: string }; Returns: undefined };
       is_admin: { Args: Record<string, never>; Returns: boolean };
+      track_ad_event: { Args: { p_campaign_id: string; p_kind: string }; Returns: undefined };
+      admin_review_campaign: { Args: { p_campaign_id: string; p_status: 'pending_review' | 'active' | 'paused' | 'rejected' | 'ended'; p_reason?: string }; Returns: undefined };
       delete_my_account: { Args: Record<string, never>; Returns: undefined };
       mark_conversation_read: { Args: { p_conversation_id: string }; Returns: undefined };
       my_conversations: {

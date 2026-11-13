@@ -88,6 +88,8 @@ export default function RootLayout() {
         <Stack.Screen name="verification" />
         <Stack.Screen name="moderation" />
         <Stack.Screen name="promo-codes" />
+        <Stack.Screen name="ads" />
+        <Stack.Screen name="moderation-ads" />
         <Stack.Screen name="settings" />
         <Stack.Screen name="legal/[doc]" />
         <Stack.Screen

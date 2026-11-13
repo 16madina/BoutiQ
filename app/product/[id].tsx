@@ -40,6 +40,8 @@ import { ProductRail } from '@/components/ProductRail';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { StoreAvatar } from '@/components/StoreAvatar';
 import { ProductGallery } from '@/components/product/ProductGallery';
+import { trackAd } from '@/feed/campaigns';
+import { useHistory } from '@/store/useHistory';
 import { useSeller } from '@/store/useSeller';
 import { useShop } from '@/store/useShop';
 import { colors, fonts, isDark, radii, shadows, spacing, typography } from '@/theme';
@@ -69,7 +71,7 @@ function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
 }
 
 export default function ProductScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, ad } = useLocalSearchParams<{ id: string; ad?: string }>();
   const product = peekProduct(id);
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -108,6 +110,13 @@ export default function ProductScreen() {
   useEffect(() => {
     if (storeRemoteId) loadPromos(storeRemoteId);
   }, [storeRemoteId, loadPromos]);
+
+  // Sert aux sections « Pour vous » et « Récemment consultés » de l'accueil.
+  const viewedId = product?.id;
+  const viewedCategory = product?.categoryId;
+  useEffect(() => {
+    if (viewedId && viewedCategory) useHistory.getState().viewProduct({ id: viewedId, categoryId: viewedCategory });
+  }, [viewedId, viewedCategory]);
 
   if (!product) {
     return (
@@ -164,6 +173,8 @@ export default function ProductScreen() {
     }
     setChoiceError(null);
     for (let i = 0; i < count; i += 1) addToCart(product.id, size, variant, color);
+    // Arrivée par une annonce sponsorisée : l'ajout au panier lui est attribué.
+    if (ad) trackAd({ id: ad }, 'add_to_cart');
     haptics.success();
     if (buyNow) router.push('/cart');
   };

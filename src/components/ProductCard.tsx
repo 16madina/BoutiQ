@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { Star } from 'lucide-react-native';
 import { memo } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 
@@ -8,7 +9,7 @@ import { FavoriteButton } from '@/components/FavoriteButton';
 import { PressableScale } from '@/components/PressableScale';
 import { ProductPrice } from '@/components/ProductPrice';
 import { StoreLink } from '@/components/StoreLink';
-import { colors, radii, shadows, spacing, typography } from '@/theme';
+import { colors, fonts, radii, shadows, spacing, typography } from '@/theme';
 import type { Product } from '@/types';
 import { productImageUri } from '@/utils/images';
 
@@ -67,6 +68,14 @@ function ProductCardBase({ product, width }: Props) {
             {product.name}
           </Text>
           <ProductPrice price={product.price} oldPrice={product.oldPrice} />
+          {product.reviewsCount > 0 ? (
+            <View style={styles.rating}>
+              <Star size={12} color={colors.gold} fill={colors.gold} strokeWidth={1.6} />
+              <Text style={styles.ratingText}>
+                {product.rating.toFixed(1).replace('.', ',')} <Text style={styles.ratingCount}>({product.reviewsCount})</Text>
+              </Text>
+            </View>
+          ) : null}
           <View style={styles.store}>
             <StoreLink storeId={product.storeId} />
           </View>
@@ -105,4 +114,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   store: { marginTop: 2 },
+  rating: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  ratingText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.text },
+  ratingCount: { fontFamily: fonts.regular, color: colors.textSecondary },
 });
