@@ -1,116 +1,135 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react-native';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Info, Minus, Plus, ShoppingCart, Store as StoreIcon, Trash2 } from 'lucide-react-native';
+import { useMemo } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeOut, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { getStore, peekProduct } from '@/api/catalog';
+import { groupCart, type CartGroupState } from '@/api/account';
+import { useRemoteCatalog } from '@/api/remoteCatalog';
 import { EmptyState } from '@/components/EmptyState';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { useSeller } from '@/store/useSeller';
 import { useShop } from '@/store/useShop';
 import { colors, fonts, radii, shadows, spacing, typography } from '@/theme';
 import { formatFCFA } from '@/utils/format';
 import { haptics } from '@/utils/haptics';
-import { productImageUri } from '@/utils/images';
 
+const NOTE: Record<Exclude<CartGroupState, 'orderable'>, string> = {
+  demo: 'Boutique de démonstration : ses articles ne peuvent pas être commandés.',
+  unverified: 'Cette boutique attend sa vérification : la commande sera possible très bientôt.',
+  own: 'C’est votre boutique : vous ne pouvez pas y commander.',
+};
+
+/** Panier : une commande par boutique, chaque vendeur livre lui-même. */
 export default function CartScreen() {
   const insets = useSafeAreaInsets();
   const cart = useShop((s) => s.cart);
   const setQuantity = useShop((s) => s.setQuantity);
   const removeFromCart = useShop((s) => s.removeFromCart);
-  const clearCart = useShop((s) => s.clearCart);
-
-  const lines = cart
-    .map((l) => ({ ...l, product: peekProduct(l.productId) }))
-    .filter((l): l is typeof l & { product: NonNullable<typeof l.product> } => !!l.product);
-  const total = lines.reduce((sum, l) => sum + l.product.price * l.quantity, 0);
-  const count = lines.reduce((sum, l) => sum + l.quantity, 0);
+  const ownSlug = useSeller((s) => s.store?.slug);
+  const syncedAt = useRemoteCatalog((s) => s.syncedAt);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const groups = useMemo(() => groupCart(cart, ownSlug), [cart, ownSlug, syncedAt]);
+  const orderable = groups.filter((g) => g.state === 'orderable');
+  const total = orderable.reduce((n, g) => n + g.total, 0);
+  const count = cart.reduce((n, l) => n + l.quantity, 0);
 
   return (
     <View style={styles.screen}>
       <ScreenHeader title={`Mon panier${count ? ` (${count})` : ''}`} />
-      {lines.length === 0 ? (
+      {groups.length === 0 ? (
         <EmptyState
           icon={ShoppingCart}
           title="Votre panier est vide"
-          message="Ajoutez des articles depuis l’accueil grâce au bouton panier sur chaque photo."
+          message="Ajoutez des articles grâce au bouton panier sur chaque photo."
           actionLabel="Découvrir les tendances"
           onAction={() => router.navigate('/')}
         />
       ) : (
         <>
-          <FlatList
-            data={lines}
-            keyExtractor={(l) => `${l.productId}-${l.size ?? ''}`}
-            contentContainerStyle={{ padding: spacing.screen, gap: 12, paddingBottom: 160 }}
-            renderItem={({ item: l }) => (
-              <Animated.View layout={LinearTransition.springify()} exiting={FadeOut} style={styles.line}>
-                <Pressable onPress={() => router.push({ pathname: '/product/[id]', params: { id: l.productId } })}>
-                  <Image source={{ uri: productImageUri(l.product, 84, 1) }} style={styles.thumb} contentFit="cover" cachePolicy="memory-disk" />
+          <ScrollView contentContainerStyle={{ padding: spacing.screen, gap: 16, paddingBottom: 190 + insets.bottom }}>
+            {groups.map((g) => (
+              <View key={g.storeKey} style={styles.group}>
+                <Pressable onPress={() => router.push({ pathname: '/store/[id]', params: { id: g.storeKey } })} style={styles.groupHead}>
+                  <StoreIcon size={17} color={colors.cognac} strokeWidth={1.8} />
+                  <Text style={styles.groupName} numberOfLines={1}>
+                    {g.storeName}
+                  </Text>
+                  <Text style={styles.groupTotal}>{formatFCFA(g.total)}</Text>
                 </Pressable>
-                <View style={{ flex: 1, gap: 3 }}>
-                  <Text style={typography.productName} numberOfLines={1}>
-                    {l.product.name}
-                  </Text>
-                  <Text style={typography.caption} numberOfLines={1}>
-                    {getStore(l.product.storeId)?.name}
-                    {l.size ? ` · Taille ${l.size}` : ''}
-                  </Text>
-                  <Text style={typography.price}>{formatFCFA(l.product.price)}</Text>
-                </View>
-                <View style={styles.right}>
-                  <Pressable onPress={() => removeFromCart(l.productId, l.size)} hitSlop={8} accessibilityLabel="Supprimer">
-                    <Trash2 size={18} strokeWidth={1.7} color={colors.textSecondary} />
-                  </Pressable>
-                  <View style={styles.qty}>
-                    <Pressable
-                      onPress={() => {
-                        haptics.selection();
-                        setQuantity(l.productId, l.quantity - 1, l.size);
-                      }}
-                      hitSlop={6}
-                      style={styles.qtyBtn}
-                      accessibilityLabel="Diminuer"
-                    >
-                      <Minus size={14} strokeWidth={2.2} color={colors.text} />
-                    </Pressable>
-                    <Text style={styles.qtyText}>{l.quantity}</Text>
-                    <Pressable
-                      onPress={() => {
-                        haptics.selection();
-                        setQuantity(l.productId, l.quantity + 1, l.size);
-                      }}
-                      hitSlop={6}
-                      style={styles.qtyBtn}
-                      accessibilityLabel="Augmenter"
-                    >
-                      <Plus size={14} strokeWidth={2.2} color={colors.text} />
-                    </Pressable>
+                {g.state !== 'orderable' && (
+                  <View style={styles.note}>
+                    <Info size={15} color={colors.chocolate} strokeWidth={1.9} />
+                    <Text style={styles.noteText}>{NOTE[g.state]}</Text>
                   </View>
-                </View>
-              </Animated.View>
-            )}
-          />
+                )}
+                {g.lines.map((l) => (
+                  <Animated.View key={`${l.productId}-${l.size ?? ''}-${l.variant ?? ''}`} layout={LinearTransition.springify()} exiting={FadeOut} style={styles.line}>
+                    <Pressable onPress={() => router.push({ pathname: '/product/[id]', params: { id: l.productId } })}>
+                      {l.imageUri ? <Image source={{ uri: l.imageUri }} style={styles.thumb} contentFit="cover" /> : <View style={styles.thumb} />}
+                    </Pressable>
+                    <View style={{ flex: 1, gap: 3 }}>
+                      <Text style={typography.productName} numberOfLines={1}>
+                        {l.name}
+                      </Text>
+                      {l.size || l.variant ? (
+                        <Text style={typography.caption} numberOfLines={1}>
+                          {[l.variant, l.size ? `Taille ${l.size}` : null].filter(Boolean).join(' · ')}
+                        </Text>
+                      ) : null}
+                      <Text style={typography.price}>{formatFCFA(l.unitPrice)}</Text>
+                    </View>
+                    <View style={styles.right}>
+                      <Pressable onPress={() => removeFromCart(l.productId, l.size, l.variant)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Retirer ${l.name}`}>
+                        <Trash2 size={18} strokeWidth={1.7} color={colors.textSecondary} />
+                      </Pressable>
+                      <View style={styles.qty}>
+                        <Pressable
+                          onPress={() => {
+                            haptics.selection();
+                            setQuantity(l.productId, l.quantity - 1, l.size, l.variant);
+                          }}
+                          hitSlop={6}
+                          style={styles.qtyBtn}
+                          accessibilityRole="button"
+                          accessibilityLabel="Diminuer"
+                        >
+                          <Minus size={14} strokeWidth={2.2} color={colors.text} />
+                        </Pressable>
+                        <Text style={styles.qtyText}>{l.quantity}</Text>
+                        <Pressable
+                          onPress={() => {
+                            haptics.selection();
+                            setQuantity(l.productId, l.quantity + 1, l.size, l.variant);
+                          }}
+                          hitSlop={6}
+                          style={styles.qtyBtn}
+                          accessibilityRole="button"
+                          accessibilityLabel="Augmenter"
+                        >
+                          <Plus size={14} strokeWidth={2.2} color={colors.text} />
+                        </Pressable>
+                      </View>
+                    </View>
+                  </Animated.View>
+                ))}
+              </View>
+            ))}
+          </ScrollView>
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
             <View style={styles.totalRow}>
-              <Text style={typography.h3}>Total</Text>
+              <View>
+                <Text style={typography.h3}>Total à commander</Text>
+                <Text style={typography.caption}>
+                  {orderable.length > 1 ? `${orderable.length} commandes, une par boutique` : orderable.length === 1 ? '1 boutique' : 'Aucun article commandable'}
+                </Text>
+              </View>
               <Text style={[typography.price, { fontSize: 20 }]}>{formatFCFA(total)}</Text>
             </View>
-            <PrimaryButton
-              label="Valider ma commande"
-              onPress={() =>
-                Alert.alert(
-                  'Démo',
-                  'Le paiement (Mobile Money, carte, paiement à la livraison) arrive dans la prochaine version.',
-                  [
-                    { text: 'Vider le panier', style: 'destructive', onPress: clearCart },
-                    { text: 'OK' },
-                  ],
-                )
-              }
-            />
+            <PrimaryButton label="Commander" onPress={() => router.push('/checkout')} disabled={orderable.length === 0} variant="caramel" style={{ height: 56 }} />
           </View>
         </>
       )}
@@ -120,34 +139,29 @@ export default function CartScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  line: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 10,
-    borderRadius: radii.lg,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    ...shadows.soft,
-  },
-  thumb: { width: 84, height: 84, borderRadius: radii.md, backgroundColor: colors.champagne },
-  right: { alignItems: 'flex-end', justifyContent: 'space-between', alignSelf: 'stretch', paddingVertical: 2 },
-  qty: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.backgroundAlt, borderRadius: radii.pill, padding: 4 },
-  qtyBtn: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  qtyText: { fontFamily: fonts.semibold, fontSize: 14, minWidth: 14, textAlign: 'center', color: colors.text },
+  group: { gap: 10, padding: 12, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, ...shadows.soft },
+  groupHead: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 },
+  groupName: { flex: 1, fontFamily: fonts.bold, fontSize: 15.5, color: colors.text },
+  groupTotal: { fontFamily: fonts.semibold, fontSize: 14, color: colors.textSecondary },
+  note: { flexDirection: 'row', gap: 8, padding: 10, borderRadius: radii.md, backgroundColor: '#F6E8D6' },
+  noteText: { flex: 1, fontFamily: fonts.medium, fontSize: 12.5, lineHeight: 17, color: colors.chocolate },
+  line: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 6, borderRadius: radii.lg, backgroundColor: colors.background },
+  thumb: { width: 72, height: 80, borderRadius: radii.md, backgroundColor: colors.champagne },
+  right: { alignItems: 'flex-end', justifyContent: 'space-between', alignSelf: 'stretch', paddingVertical: 4 },
+  qty: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 4, borderRadius: radii.pill, backgroundColor: colors.backgroundAlt },
+  qtyBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  qtyText: { fontFamily: fonts.bold, fontSize: 15, minWidth: 18, textAlign: 'center', color: colors.text },
   footer: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
+    gap: 12,
     paddingHorizontal: spacing.screen,
-    paddingTop: spacing.lg,
-    gap: 14,
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
-    ...shadows.floating,
+    paddingTop: 14,
+    backgroundColor: colors.background,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  totalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

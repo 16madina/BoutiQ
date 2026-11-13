@@ -2,6 +2,7 @@
  * Pont entre la boutique créée sur l'appareil et le catalogue public.
  * Production : ces données viendront des tables Supabase `stores` / `products`.
  */
+import { remoteStore } from '@/api/remoteCatalog';
 import { useSeller } from '@/store/useSeller';
 import type { Product, Store } from '@/types';
 import type { SellerProduct, SellerStore } from '@/types/seller';
@@ -17,6 +18,7 @@ export function toPublicStore(s: SellerStore): Store {
   return {
     id: s.slug,
     slug: s.slug,
+    remoteId: s.remoteId,
     name: s.name,
     city: s.city,
     country: s.country,
@@ -27,7 +29,8 @@ export function toPublicStore(s: SellerStore): Store {
     bannerUri: s.banner?.uri,
     rating: 0,
     reviewsCount: 0,
-    followers: 0,
+    // Abonnés réels (Supabase) une fois la boutique en ligne.
+    followers: remoteStore(s.slug)?.followers ?? 0,
     verified: s.status === 'verified',
     salesEnabled: s.status === 'verified',
     delivery: DELIVERY_DEFAULT,

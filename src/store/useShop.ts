@@ -1,4 +1,7 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+import { deviceStorage } from '@/store/persist';
 
 import type { SortOption } from '@/types';
 
@@ -6,6 +9,8 @@ export interface CartLine {
   productId: string;
   quantity: number;
   size?: string;
+  /** Variante choisie (« Rouge · M », « 500 ml »…), prix propre. */
+  variant?: string;
 }
 
 export interface SearchFilters {
@@ -30,22 +35,30 @@ interface ShopState {
   followedStores: Record<string, true>;
   filters: SearchFilters;
   toggleFavorite: (productId: string) => boolean;
-  addToCart: (productId: string, size?: string) => void;
-  setQuantity: (productId: string, quantity: number, size?: string) => void;
-  removeFromCart: (productId: string, size?: string) => void;
+  addToCart: (productId: string, size?: string, variant?: string) => void;
+  setQuantity: (productId: string, quantity: number, size?: string, variant?: string) => void;
+  removeFromCart: (productId: string, size?: string, variant?: string) => void;
+  /** Retire les lignes commandées (les autres restent dans le panier). */
+  removeLines: (lines: CartLine[]) => void;
   clearCart: () => void;
   toggleFollow: (storeId: string) => void;
+  /** Favoris et abonnements relus depuis le compte (autre appareil). */
+  mergeRemote: (patch: { favorites?: string[]; followedStores?: string[] }) => void;
   setFilters: (patch: Partial<SearchFilters>) => void;
   resetFilters: () => void;
 }
 
-const sameLine = (l: CartLine, productId: string, size?: string) => l.productId === productId && l.size === size;
+const sameLine = (l: CartLine, productId: string, size?: string, variant?: string) =>
+  l.productId === productId && l.size === size && l.variant === variant;
 
 /**
- * État client (favoris, panier, boutiques suivies, filtres).
- * Démo : en mémoire. Production : persister (MMKV / AsyncStorage) et synchroniser avec le compte.
+ * État client : favoris, panier, boutiques suivies, filtres.
+ * Gardé sur l'appareil ; favoris et abonnements sont aussi enregistrés dans le compte
+ * Supabase (voir src/api/shopSync.ts).
  */
-export const useShop = create<ShopState>((set, get) => ({
+export const useShop = create<ShopState>()(
+  persist(
+    (set, get) => ({
   favorites: {},
   cart: [],
   followedStores: {},
@@ -62,24 +75,26 @@ export const useShop = create<ShopState>((set, get) => ({
     return !isFav;
   },
 
-  addToCart: (productId, size) =>
+  addToCart: (productId, size, variant) =>
     set((s) => {
-      const existing = s.cart.find((l) => sameLine(l, productId, size));
+      const existing = s.cart.find((l) => sameLine(l, productId, size, variant));
       if (existing) {
-        return { cart: s.cart.map((l) => (l === existing ? { ...l, quantity: l.quantity + 1 } : l)) };
+        return { cart: s.cart.map((l) => (l === existing ? { ...l, quantity: Math.min(l.quantity + 1, 99) } : l)) };
       }
-      return { cart: [...s.cart, { productId, size, quantity: 1 }] };
+      return { cart: [...s.cart, { productId, size, variant, quantity: 1 }] };
     }),
 
-  setQuantity: (productId, quantity, size) =>
+  setQuantity: (productId, quantity, size, variant) =>
     set((s) => ({
       cart:
         quantity <= 0
-          ? s.cart.filter((l) => !sameLine(l, productId, size))
-          : s.cart.map((l) => (sameLine(l, productId, size) ? { ...l, quantity } : l)),
+          ? s.cart.filter((l) => !sameLine(l, productId, size, variant))
+          : s.cart.map((l) => (sameLine(l, productId, size, variant) ? { ...l, quantity: Math.min(quantity, 99) } : l)),
     })),
 
-  removeFromCart: (productId, size) => set((s) => ({ cart: s.cart.filter((l) => !sameLine(l, productId, size)) })),
+  removeFromCart: (productId, size, variant) => set((s) => ({ cart: s.cart.filter((l) => !sameLine(l, productId, size, variant)) })),
+
+  removeLines: (lines) => set((s) => ({ cart: s.cart.filter((l) => !lines.some((o) => sameLine(l, o.productId, o.size, o.variant))) })),
 
   clearCart: () => set({ cart: [] }),
 
@@ -91,9 +106,25 @@ export const useShop = create<ShopState>((set, get) => ({
       return { followedStores };
     }),
 
+  mergeRemote: ({ favorites, followedStores }) =>
+    set((s) => ({
+      favorites: favorites ? { ...s.favorites, ...Object.fromEntries(favorites.map((k) => [k, true as const])) } : s.favorites,
+      followedStores: followedStores
+        ? { ...s.followedStores, ...Object.fromEntries(followedStores.map((k) => [k, true as const])) }
+        : s.followedStores,
+    })),
+
   setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
   resetFilters: () => set({ filters: DEFAULT_FILTERS }),
-}));
+    }),
+    {
+      name: 'boutiq-shop',
+      storage: deviceStorage,
+      // Les filtres de recherche repartent à zéro à chaque ouverture.
+      partialize: (s) => ({ favorites: s.favorites, cart: s.cart, followedStores: s.followedStores }),
+    },
+  ),
+);
 
 export const useCartCount = () => useShop((s) => s.cart.reduce((sum, l) => sum + l.quantity, 0));
 export const useIsFavorite = (productId: string) => useShop((s) => !!s.favorites[productId]);

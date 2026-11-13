@@ -20,10 +20,12 @@ interface Props {
   tint?: string;
   /** Couleur de l'icône. */
   iconColor?: string;
+  /** Produit avec taille ou option à choisir : ouvre la fiche au lieu d'ajouter directement. */
+  onChoose?: () => void;
 }
 
 /** Petit bouton circulaire « ajout au panier » posé sur l'image du produit. */
-export function AddToCartButton({ productId, size = 34, tint, iconColor = colors.text }: Props) {
+export function AddToCartButton({ productId, size = 34, tint, iconColor = colors.text, onChoose }: Props) {
   const addToCart = useShop((s) => s.addToCart);
   const [added, setAdded] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -39,6 +41,11 @@ export function AddToCartButton({ productId, size = 34, tint, iconColor = colors
   }));
 
   const onPress = () => {
+    if (onChoose) {
+      haptics.light();
+      onChoose();
+      return;
+    }
     addToCart(productId);
     haptics.success();
     scale.value = withSequence(withSpring(1.22, { damping: 7, stiffness: 420 }), withSpring(1, { damping: 12 }));

@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { storefrontProducts } from '@/api/catalog';
 import { useRemoteCatalog } from '@/api/remoteCatalog';
+import { recordRemoteView } from '@/api/sellerSync';
 import { getStorefront, getStorefrontSections } from '@/api/storefront';
 import { CircleIconButton } from '@/components/CircleIconButton';
 import { EmptyState } from '@/components/EmptyState';
@@ -104,6 +105,11 @@ export default function StoreScreen() {
   useEffect(() => {
     if (sf?.isOwn && space === 'buyer') recordStoreView();
   }, [sf?.isOwn, space, recordStoreView]);
+  // Vitrine réelle d'un autre vendeur : la visite compte dans ses statistiques.
+  const remoteStoreId = sf && !sf.isOwn ? sf.store.remoteId : undefined;
+  useEffect(() => {
+    if (remoteStoreId) recordRemoteView(remoteStoreId).catch(() => {});
+  }, [remoteStoreId]);
 
   if (!sf || !sections) {
     return (

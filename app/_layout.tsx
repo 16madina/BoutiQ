@@ -15,7 +15,9 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
+import { pullProfile } from '@/api/account';
 import { syncRemoteCatalog } from '@/api/remoteCatalog';
+import { pullShopData, startShopSync } from '@/api/shopSync';
 import { colors } from '@/theme';
 import { isPhonePreview, PREVIEW_INSETS } from '@/utils/devicePreview';
 
@@ -38,7 +40,12 @@ export default function RootLayout() {
 
   // Catalogue réel (Supabase) chargé en arrière-plan ; la démo reste visible en attendant.
   useEffect(() => {
-    syncRemoteCatalog();
+    // Favoris, abonnements et profil du compte : relus une fois les boutiques connues.
+    syncRemoteCatalog().then(() => {
+      pullShopData().catch(() => {});
+      pullProfile().catch(() => {});
+    });
+    startShopSync();
   }, []);
 
   if (!loaded && !fontError) return null;
@@ -60,13 +67,16 @@ export default function RootLayout() {
         <Stack.Screen name="search" options={{ animation: 'fade' }} />
         <Stack.Screen name="cart" />
         <Stack.Screen name="notifications" />
-        <Stack.Screen name="account" />
+        <Stack.Screen name="favorites" />
         {/* Module vendeur */}
         <Stack.Screen name="auth" options={{ presentation: 'modal', gestureEnabled: true }} />
         <Stack.Screen name="open-store" />
         <Stack.Screen name="seller" options={{ animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="product-editor" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="customize" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="checkout" />
+        <Stack.Screen name="order/[id]" />
+        <Stack.Screen name="profile" />
         <Stack.Screen name="verification" />
         <Stack.Screen
           name="select"

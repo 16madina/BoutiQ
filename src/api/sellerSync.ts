@@ -13,6 +13,7 @@ import { randomUUID } from 'expo-crypto';
 import { syncRemoteCatalog } from '@/api/remoteCatalog';
 import { resolveOwnSettings } from '@/api/storefront';
 import { removeImages, uploadImage } from '@/lib/media';
+import { ensureSession } from '@/lib/session';
 import { storeMediaUrl, supabase } from '@/lib/supabase';
 import { normalizeTemplateId } from '@/storefront/templates';
 import { useSeller } from '@/store/useSeller';
@@ -90,14 +91,7 @@ function client() {
 /* --------------------------------------------------------------- Connexion */
 
 /** Session du vendeur (connexion anonyme si besoin). */
-export async function ensureSession() {
-  const sb = client();
-  const { data } = await sb.auth.getSession();
-  if (data.session) return data.session.user;
-  const { data: signIn, error } = await sb.auth.signInAnonymously();
-  if (error || !signIn.user) throw error ?? new Error('Connexion impossible');
-  return signIn.user;
-}
+export { ensureSession };
 
 /* ---------------------------------------------------------------- Boutique */
 
@@ -393,7 +387,21 @@ export async function pullSellerData(): Promise<number> {
         rejectionReason: remoteStore.rejection_reason ?? undefined,
         createdAt: remoteStore.created_at,
       };
-  if (local) seller().updateStore({ remoteId: remoteStore.id, collections });
+  // Statut de vérification décidé en ligne (équipe BoutiQ).
+  if (local)
+    useSeller.setState((st) =>
+      st.store
+        ? {
+            store: {
+              ...st.store,
+              remoteId: remoteStore.id,
+              collections,
+              status: remoteStore.status === 'suspended' ? 'rejected' : remoteStore.status,
+              rejectionReason: remoteStore.rejection_reason ?? undefined,
+            },
+          }
+        : st,
+    );
 
   const products: SellerProduct[] = rows.map((r) => ({
     id: r.id,
@@ -416,4 +424,93 @@ export async function pullSellerData(): Promise<number> {
   }));
   seller().hydrateFromServer(local ? null : store, products);
   return products.length;
+}
+
+/* ------------------------------------------------------------ Vérification */
+
+const REVIEW_ERRORS: Record<string, string> = {
+  'Logo manquant': 'Ajoutez le logo de votre boutique (Personnaliser ma boutique).',
+  'Informations vendeur incomplètes': 'Ajoutez votre nom, votre téléphone et la photo de votre pièce d’identité.',
+  'Aucun produit publié': 'Publiez au moins un produit avant de demander la vérification.',
+};
+
+/**
+ * Envoie la demande de vérification : boutique et logo en ligne, pièce d'identité
+ * dans le dossier privé « seller-documents », puis submit_store_for_review().
+ * La décision (vérifiée / refusée) est prise par l'équipe BoutiQ.
+ */
+export async function submitForReviewOnline() {
+  const sb = client();
+  try {
+    const storeId = await ensureRemoteStore();
+    await syncStoreExtras(storeId);
+    // Produits publiés pas encore envoyés.
+    for (const p of seller().products.filter((x) => x.status === 'published' && x.sync?.state !== 'synced')) {
+      await syncProduct(p.id).catch(() => {});
+    }
+    const details = seller().details;
+    const doc = details?.idDocument;
+    if (doc && !doc.remotePath) {
+      const uploaded = await withRetry(() => uploadImage(doc, storeId, 1600, 'seller-documents'));
+      seller().updateDetails({ idDocument: uploaded });
+      ok(await sb.from('seller_details').update({ id_document_path: uploaded.remotePath }).eq('store_id', storeId));
+    }
+    const status = ok(await sb.rpc('submit_store_for_review', { p_store_id: storeId })) ?? 'pending_review';
+    useSeller.setState((st) =>
+      st.store ? { store: { ...st.store, status: status === 'suspended' ? 'rejected' : status, submittedAt: new Date().toISOString(), rejectionReason: undefined } } : st,
+    );
+    return status;
+  } catch (e) {
+    const msg = (e as { message?: string })?.message ?? '';
+    if (REVIEW_ERRORS[msg]) throw new SyncError(REVIEW_ERRORS[msg], 'invalid');
+    throw toSyncError(e);
+  }
+}
+
+/* ------------------------------------------------------- Tableau de bord */
+
+export interface DashboardStats {
+  revenue: number;
+  orders: number;
+  views: number;
+  followers: number;
+  published: number;
+}
+
+/** Chiffres des 30 derniers jours (Supabase), ou null si la boutique n'est pas encore en ligne. */
+export async function fetchDashboardStats(): Promise<DashboardStats | null> {
+  const storeId = seller().store?.remoteId;
+  if (!supabase || !storeId) return null;
+  const { data, error } = await supabase.rpc('store_dashboard_stats', { p_store_id: storeId });
+  if (error || !data?.[0]) return null;
+  const r = data[0];
+  return { revenue: Number(r.revenue), orders: Number(r.orders_count), views: Number(r.views_30d), followers: Number(r.followers), published: Number(r.published_products) };
+}
+
+/** Visite d'une vitrine réelle (statistique « vues » du vendeur). */
+export async function recordRemoteView(storeId: string) {
+  if (!supabase) return;
+  const { data } = await supabase.auth.getSession();
+  await supabase.from('store_views').insert({ store_id: storeId, viewer_id: data.session?.user.id ?? null });
+}
+
+/** Supprime la boutique en ligne (produits, collections, commandes liées) puis sur l'appareil. */
+export async function deleteStoreEverywhere() {
+  const { store, products } = seller();
+  if (store?.remoteId && supabase) {
+    try {
+      await ensureSession();
+      const paths = [
+        ...products.flatMap((p) => p.photos.map((ph) => ph.remotePath)),
+        store.logo?.remotePath,
+        ...(store.banners ?? [store.banner]).map((b) => b?.remotePath),
+      ].filter((x): x is string => !!x);
+      ok(await supabase.from('stores').delete().eq('id', store.remoteId));
+      await removeImages(paths).catch(() => {});
+    } catch (e) {
+      throw toSyncError(e);
+    }
+  }
+  useSeller.setState({ store: null, details: null, products: [], storeViews: 0, space: 'buyer', productDraft: null });
+  syncRemoteCatalog();
 }

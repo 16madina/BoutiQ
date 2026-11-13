@@ -20,12 +20,12 @@ export async function compressImage(img: LocalImage, maxSide = 1600): Promise<Lo
 }
 
 /** Envoie une photo compressée ; renvoie son chemin dans le stockage. */
-export async function uploadImage(img: LocalImage, folder: string, maxSide = 1600): Promise<LocalImage> {
+export async function uploadImage(img: LocalImage, folder: string, maxSide = 1600, bucket: 'store-media' | 'seller-documents' = 'store-media'): Promise<LocalImage> {
   if (!supabase) throw new Error('Supabase non configuré');
   const small = await compressImage(img, maxSide);
   const body = await (await fetch(small.uri)).arrayBuffer();
   const path = `${folder}/${randomUUID()}.jpg`;
-  const { error } = await supabase.storage.from('store-media').upload(path, body, { contentType: 'image/jpeg', upsert: false });
+  const { error } = await supabase.storage.from(bucket).upload(path, body, { contentType: 'image/jpeg', upsert: false });
   if (error) throw error;
   // L'image locale reste affichée sur l'appareil ; les autres la liront via son chemin.
   return { uri: img.uri, width: small.width, height: small.height, remotePath: path };

@@ -1,4 +1,5 @@
-import { router, type Href } from 'expo-router';
+import { router, useFocusEffect, type Href } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   ChartColumn,
   Check,
@@ -18,6 +19,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toPublicStore } from '@/api/sellerCatalog';
+import { fetchDashboardStats, type DashboardStats } from '@/api/sellerSync';
 import { resolveOwnSettings } from '@/api/storefront';
 import { useTabBarSpace } from '@/components/FloatingTabBar';
 import { PressableScale } from '@/components/PressableScale';
@@ -62,6 +64,15 @@ export default function SellerDashboard() {
   const store = useSeller((s) => s.store);
   const products = useSeller((s) => s.products);
   const views = useSeller((s) => s.storeViews);
+  // Chiffres réels (30 derniers jours) une fois la boutique en ligne.
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      fetchDashboardStats()
+        .then(setStats)
+        .catch(() => {});
+    }, []),
+  );
   if (!store) return null;
 
   const publicStore = toPublicStore(store);
@@ -138,9 +149,9 @@ export default function SellerDashboard() {
       )}
 
       <View style={[styles.section, styles.kpis]}>
-        <Kpi icon={Wallet} label="Ventes" value={formatFCFA(0)} delay={100} />
-        <Kpi icon={ReceiptText} label="Commandes" value="0" delay={140} />
-        <Kpi icon={Eye} label="Vues de la vitrine" value={formatCount(views)} delay={180} />
+        <Kpi icon={Wallet} label="Ventes (30 jours)" value={formatFCFA(stats?.revenue ?? 0)} delay={100} />
+        <Kpi icon={ReceiptText} label="Commandes (30 jours)" value={String(stats?.orders ?? 0)} delay={140} />
+        <Kpi icon={Eye} label="Vues de la vitrine" value={formatCount(stats?.views ?? views)} delay={180} />
         <Kpi icon={Package} label="Produits en ligne" value={`${published}/${products.length}`} delay={220} />
       </View>
 

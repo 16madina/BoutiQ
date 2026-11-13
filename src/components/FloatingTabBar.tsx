@@ -1,13 +1,12 @@
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Heart, House, LayoutGrid, Package, Store, type LucideIcon } from 'lucide-react-native';
+import { House, LayoutGrid, Package, Store, UserRound, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GlassSurface, glassBorder } from '@/components/GlassSurface';
-import { useShop } from '@/store/useShop';
 import { colors, fonts, gradients, layout, shadows } from '@/theme';
 import { haptics } from '@/utils/haptics';
 
@@ -15,8 +14,8 @@ const ICONS: Record<string, LucideIcon> = {
   index: House,
   categories: LayoutGrid,
   stores: Store,
-  favorites: Heart,
   orders: Package,
+  account: UserRound,
 };
 
 const PILL_INSET = 4;
@@ -43,7 +42,6 @@ export function FloatingTabBar({
 }: BottomTabBarProps & { icons?: Record<string, LucideIcon> }) {
   const bottom = useTabBarBottomOffset();
   const [barWidth, setBarWidth] = useState(0);
-  const favoritesCount = useShop((s) => Object.keys(s.favorites).length);
 
   const tabCount = state.routes.length;
   const tabWidth = barWidth / tabCount;
@@ -101,7 +99,6 @@ export function FloatingTabBar({
           >
             <View>
               <Icon size={23} strokeWidth={focused ? 2 : 1.6} color={color} />
-              {route.name === 'favorites' && favoritesCount > 0 && !focused && <View style={styles.dot} />}
             </View>
             <Text style={[styles.label, { color }]} numberOfLines={1}>
               {label}
@@ -135,13 +132,4 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, height: '100%', alignItems: 'center', justifyContent: 'center', gap: 3 },
   label: { fontFamily: fonts.medium, fontSize: 10.5, letterSpacing: -0.2 },
-  dot: {
-    position: 'absolute',
-    top: -1,
-    right: -3,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.caramel,
-  },
 });

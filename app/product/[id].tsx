@@ -3,7 +3,7 @@ import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, SearchX, Share2, ShieldCheck, ShoppingBag, Star, Truck } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -31,6 +31,8 @@ export default function ProductScreen() {
   const insets = useSafeAreaInsets();
   const addToCart = useShop((s) => s.addToCart);
   const [size, setSize] = useState<string | undefined>();
+  const [variant, setVariant] = useState<string | undefined>();
+  const [choiceError, setChoiceError] = useState<string | null>(null);
 
   if (!product) {
     return (
@@ -44,14 +46,23 @@ export default function ProductScreen() {
   const store = getStore(product.storeId);
   const heroHeight = width * Math.min(Math.max(product.aspect, 0.95), 1.3);
   const needsSize = !!product.sizes?.length;
+  const needsVariant = !!product.variants?.length;
+  const chosen = product.variants?.find((v) => v.label === variant);
+  const soldOut = product.stock === 0 && !needsVariant;
 
   const onAdd = (buyNow = false) => {
-    if (needsSize && !size) {
+    if (needsVariant && !variant) {
       haptics.light();
-      Alert.alert('Choisissez une taille', 'Sélectionnez votre taille avant de continuer.');
+      setChoiceError('Choisissez une option avant de continuer.');
       return;
     }
-    addToCart(product.id, size);
+    if (needsSize && !size) {
+      haptics.light();
+      setChoiceError('Choisissez votre taille avant de continuer.');
+      return;
+    }
+    setChoiceError(null);
+    addToCart(product.id, size, variant);
     haptics.success();
     if (buyNow) router.push('/cart');
   };
@@ -84,19 +95,34 @@ export default function ProductScreen() {
             </View>
           )}
           <View style={{ marginTop: spacing.md, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <ProductPrice price={product.price} oldPrice={product.oldPrice} size="lg" />
-            {product.stock === 0 && <Text style={styles.soldOut}>Épuisé</Text>}
+            <ProductPrice price={chosen?.price ?? product.price} oldPrice={chosen ? undefined : product.oldPrice} size="lg" />
+            {soldOut && <Text style={styles.soldOut}>Épuisé</Text>}
           </View>
 
           {!!product.variants?.length && (
             <View style={styles.block}>
-              <Text style={styles.blockTitle}>Choix et prix</Text>
-              {product.variants.map((v) => (
-                <View key={v.label} style={styles.variantRow}>
-                  <Text style={styles.description}>{v.label}</Text>
-                  <Text style={styles.variantPrice}>{v.stock > 0 ? formatFCFA(v.price) : 'Épuisé'}</Text>
-                </View>
-              ))}
+              <Text style={styles.blockTitle}>Choisissez</Text>
+              {product.variants.map((v) => {
+                const active = v.label === variant;
+                const out = v.stock <= 0;
+                return (
+                  <Pressable
+                    key={v.label}
+                    disabled={out}
+                    onPress={() => {
+                      haptics.selection();
+                      setVariant(v.label);
+                      setChoiceError(null);
+                    }}
+                    style={[styles.variantRow, active && styles.variantActive, out && { opacity: 0.45 }]}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active, disabled: out }}
+                  >
+                    <Text style={[styles.description, active && { fontFamily: fonts.semibold }]}>{v.label}</Text>
+                    <Text style={styles.variantPrice}>{out ? 'Épuisé' : formatFCFA(v.price)}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
           )}
 
@@ -125,6 +151,7 @@ export default function ProductScreen() {
                       onPress={() => {
                         haptics.selection();
                         setSize(s);
+                        setChoiceError(null);
                       }}
                       accessibilityRole="radio"
                       accessibilityState={{ selected: active }}
@@ -189,7 +216,16 @@ export default function ProductScreen() {
       {/* Barre d'achat translucide */}
       <View style={[styles.buyBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <GlassSurface borderRadius={0} />
-        {product.salesEnabled === false ? (
+        {choiceError ? (
+          <View style={styles.choiceError}>
+            <Text style={styles.choiceErrorText}>{choiceError}</Text>
+          </View>
+        ) : null}
+        {soldOut ? (
+          <View style={styles.salesSoon}>
+            <Text style={styles.salesSoonText}>Ce produit est épuisé pour le moment.</Text>
+          </View>
+        ) : product.salesEnabled === false ? (
           <View style={styles.salesSoon}>
             <ShieldCheck size={18} strokeWidth={1.7} color={colors.cognac} />
             <Text style={styles.salesSoonText}>Boutique en cours de vérification — achats bientôt disponibles</Text>
@@ -212,7 +248,10 @@ export default function ProductScreen() {
 
 const styles = StyleSheet.create({
   soldOut: { fontFamily: fonts.bold, fontSize: 12.5, color: colors.white, backgroundColor: colors.text, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, overflow: 'hidden' },
-  variantRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  variantRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, marginBottom: 8, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+  variantActive: { borderColor: colors.text, borderWidth: 2 },
+  choiceError: { position: 'absolute', left: 16, right: 16, top: -38, alignItems: 'center' },
+  choiceErrorText: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.white, backgroundColor: colors.promo, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, overflow: 'hidden' },
   variantPrice: { fontFamily: fonts.bold, fontSize: 15, color: colors.text },
   screen: { flex: 1, backgroundColor: colors.background },
   sheet: {

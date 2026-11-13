@@ -56,7 +56,13 @@ export default function AuthScreen() {
     }
     setLoading(true);
     setError(null);
-    await requestOtp(fullPhone);
+    try {
+      await requestOtp(fullPhone);
+    } catch (e) {
+      setLoading(false);
+      setError((e as Error).message);
+      return;
+    }
     setLoading(false);
     haptics.light();
     setStep('code');

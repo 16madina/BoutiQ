@@ -169,6 +169,8 @@ export function searchCategories(query: string): Category[] {
   return CATEGORIES.filter((c) => normalize(c.name).includes(needle));
 }
 
+/** Nombre d'articles visibles dans les flux (démo, boutiques vérifiées, sa propre boutique vérifiée). */
 export function countProducts(q: ProductQuery): number {
-  return DEMO_CATALOG.filter((p) => matches(p, q)).length;
+  // Sans les séries répétées du catalogue de démonstration : chaque article compte une fois.
+  return catalogFor(q).filter((p) => !SERIES_SUFFIX.test(p.id) && matches(p, q)).length;
 }

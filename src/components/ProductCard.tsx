@@ -48,9 +48,16 @@ function ProductCardBase({ product, width }: Props) {
           <View style={styles.favorite}>
             <FavoriteButton productId={product.id} />
           </View>
-          {product.salesEnabled !== false && (
+          {product.salesEnabled !== false && product.stock !== 0 && (
             <View style={styles.cart}>
-              <AddToCartButton productId={product.id} />
+              <AddToCartButton
+                productId={product.id}
+                onChoose={
+                  product.sizes?.length || product.variants?.length
+                    ? () => router.push({ pathname: '/product/[id]', params: { id: product.id } })
+                    : undefined
+                }
+              />
             </View>
           )}
         </View>

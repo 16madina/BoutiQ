@@ -24,6 +24,8 @@ export interface Store {
   bannerUri?: string;
   /** Adresse publique unique */
   slug?: string;
+  /** Identifiant Supabase (boutiques réelles) : abonnements, commandes, vues. */
+  remoteId?: string;
   /** Ventes et paiements activés (boutique vérifiée) */
   salesEnabled?: boolean;
   rating: number;

@@ -1,8 +1,11 @@
 import { router } from 'expo-router';
-import { ArrowLeftRight, ChevronRight, Link2, MessageCircle, Paintbrush, Share2, ShieldCheck } from 'lucide-react-native';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ArrowLeftRight, ChevronRight, Link2, MessageCircle, Paintbrush, Share2, ShieldCheck, Trash2 } from 'lucide-react-native';
+import { useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { getCategory } from '@/api/catalog';
+import { deleteStoreEverywhere } from '@/api/sellerSync';
+import { SheetAction, StoreSheet } from '@/components/storefront/StoreSheet';
 import { resolveOwnSettings } from '@/api/storefront';
 import { useTabBarSpace } from '@/components/FloatingTabBar';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -22,6 +25,8 @@ export default function SellerSettings() {
   const store = useSeller((s) => s.store);
   const updateStore = useSeller((s) => s.updateStore);
   const openPicker = usePicker((s) => s.open);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   usePickerResult('category', (v) => updateStore({ categoryId: v as CategoryId }));
   usePickerResult('city', (v) => {
@@ -107,25 +112,34 @@ export default function SellerSettings() {
           <ChevronRight size={18} color={colors.textSecondary} />
         </Pressable>
 
-        <Text
-          style={styles.danger}
-          onPress={() =>
-            Alert.alert('Supprimer la boutique ?', 'Démo : la boutique et ses produits seront effacés de cet appareil.', [
-              { text: 'Annuler', style: 'cancel' },
-              {
-                text: 'Supprimer',
-                style: 'destructive',
-                onPress: () => {
-                  useSeller.setState({ store: null, details: null, products: [], storeViews: 0, space: 'buyer' });
-                  router.replace('/');
-                },
-              },
-            ])
-          }
-        >
-          Supprimer la boutique (démo)
+        <Text style={styles.danger} onPress={() => setConfirmDelete(true)} accessibilityRole="button">
+          Supprimer ma boutique
         </Text>
+        {deleteError ? <Text style={[styles.hint, { color: colors.promo, textAlign: 'center' }]}>{deleteError}</Text> : null}
       </ScrollView>
+
+      <StoreSheet
+        visible={confirmDelete}
+        title="Supprimer votre boutique ?"
+        subtitle="La boutique, ses produits et ses photos seront supprimés de BoutiQ. Cette action est définitive."
+        onClose={() => setConfirmDelete(false)}
+      >
+        <SheetAction
+          icon={<Trash2 size={18} color={colors.white} strokeWidth={2} />}
+          tint={colors.promo}
+          label="Supprimer définitivement"
+          onPress={async () => {
+            setConfirmDelete(false);
+            try {
+              await deleteStoreEverywhere();
+              router.replace('/');
+            } catch (e) {
+              setDeleteError((e as Error).message);
+            }
+          }}
+        />
+        <SheetAction icon={<ChevronRight size={18} color={colors.cognac} strokeWidth={2} />} label="Annuler" onPress={() => setConfirmDelete(false)} />
+      </StoreSheet>
     </KeyboardAvoidingView>
   );
 }

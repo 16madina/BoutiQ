@@ -1,26 +1,27 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Bell } from 'lucide-react-native';
-import { StyleSheet, View } from 'react-native';
+import { Bell, UserRound } from 'lucide-react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { BrandLogo } from '@/components/BrandLogo';
 import { CartIconButton } from '@/components/CartIconButton';
 import { CircleIconButton } from '@/components/CircleIconButton';
 import { PressableScale } from '@/components/PressableScale';
-import { DEMO_USER } from '@/data/demo';
-import { colors, layout, spacing } from '@/theme';
-import { photoUrl } from '@/utils/images';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
+import { initialsOf, useProfile } from '@/store/useProfile';
+import { colors, fonts, layout, spacing } from '@/theme';
 
 /** En-tête compact : logo, notifications, panier, avatar. */
-export function AppHeader({ hasUnreadNotifications = true }: { hasUnreadNotifications?: boolean }) {
+export function AppHeader() {
   const size = layout.headerButtonSize;
+  const unread = useUnreadNotifications();
+  const initials = initialsOf(useProfile((s) => s.fullName));
   return (
     <View style={styles.row}>
       <BrandLogo />
       <View style={styles.actions}>
-        <CircleIconButton onPress={() => router.push('/notifications')} accessibilityLabel="Notifications">
+        <CircleIconButton onPress={() => router.push('/notifications')} accessibilityLabel={unread ? `Notifications, ${unread} non lues` : 'Notifications'}>
           <Bell size={21} strokeWidth={1.7} color={colors.text} />
-          {hasUnreadNotifications && <View style={styles.dot} />}
+          {unread > 0 && <View style={styles.dot} />}
         </CircleIconButton>
         <CartIconButton />
         <PressableScale
@@ -30,12 +31,9 @@ export function AppHeader({ hasUnreadNotifications = true }: { hasUnreadNotifica
           accessibilityLabel="Mon compte"
           style={[styles.avatarRing, { width: size + 4, height: size + 4, borderRadius: (size + 4) / 2 }]}
         >
-          <Image
-            source={{ uri: photoUrl(DEMO_USER.avatarPhotoId, size, 1) }}
-            style={{ width: size, height: size, borderRadius: size / 2 }}
-            cachePolicy="memory-disk"
-            transition={200}
-          />
+          <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}>
+            {initials ? <Text style={styles.initials}>{initials}</Text> : <UserRound size={20} color={colors.white} strokeWidth={1.8} />}
+          </View>
         </PressableScale>
       </View>
     </View>
@@ -64,6 +62,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.surface,
   },
+  avatar: { backgroundColor: colors.caramel, alignItems: 'center', justifyContent: 'center' },
+  initials: { fontFamily: fonts.bold, fontSize: 15, color: colors.white },
   avatarRing: {
     borderWidth: 2,
     borderColor: colors.champagne,

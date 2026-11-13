@@ -1,30 +1,105 @@
 /**
  * Types de la base Supabase BoutiQ (projet ddfnbjdsszopriydvhaf).
- * Généré depuis le schéma — à régénérer après chaque migration
+ * Générés depuis le schéma — à régénérer après chaque migration
  * (`npx supabase gen types typescript --project-id ddfnbjdsszopriydvhaf`).
  */
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-type StoreStatus = 'draft' | 'pending_review' | 'verified' | 'rejected' | 'suspended';
-type ProductStatus = 'draft' | 'published' | 'hidden';
-type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-type StorefrontTemplate = 'editorial' | 'mode' | 'beaute' | 'electronique' | 'alimentation' | 'generaliste';
+type Enums = Database['public']['Enums'];
 
 export type Database = {
   __InternalSupabase: { PostgrestVersion: '14.18' };
   public: {
     Tables: {
-      order_items: {
-        Row: { id: string; order_id: string; product_id: string | null; quantity: number; unit_price: number };
-        Insert: { id?: string; order_id: string; product_id?: string | null; quantity: number; unit_price: number };
-        Update: { id?: string; order_id?: string; product_id?: string | null; quantity?: number; unit_price?: number };
+      favorites: {
+        Row: { created_at: string; product_key: string; user_id: string };
+        Insert: { created_at?: string; product_key: string; user_id?: string };
+        Update: { created_at?: string; product_key?: string; user_id?: string };
         Relationships: [];
       };
-      orders: {
-        Row: { buyer_id: string; created_at: string; id: string; status: OrderStatus; store_id: string; total: number; updated_at: string };
-        Insert: { buyer_id?: string; created_at?: string; id?: string; status?: OrderStatus; store_id: string; total: number; updated_at?: string };
-        Update: { buyer_id?: string; created_at?: string; id?: string; status?: OrderStatus; store_id?: string; total?: number; updated_at?: string };
+      notifications: {
+        Row: {
+          body: string;
+          created_at: string;
+          id: string;
+          kind: string;
+          order_id: string | null;
+          product_id: string | null;
+          read_at: string | null;
+          store_id: string | null;
+          title: string;
+          user_id: string;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          id?: string;
+          kind: string;
+          order_id?: string | null;
+          product_id?: string | null;
+          read_at?: string | null;
+          store_id?: string | null;
+          title: string;
+          user_id: string;
+        };
+        Update: { read_at?: string | null };
         Relationships: [];
+      };
+      order_items: {
+        Row: {
+          id: string;
+          image_path: string | null;
+          order_id: string;
+          product_id: string | null;
+          product_name: string | null;
+          quantity: number;
+          size: string | null;
+          unit_price: number;
+          variant: string | null;
+        };
+        Insert: {
+          id?: string;
+          image_path?: string | null;
+          order_id: string;
+          product_id?: string | null;
+          product_name?: string | null;
+          quantity: number;
+          size?: string | null;
+          unit_price: number;
+          variant?: string | null;
+        };
+        Update: { quantity?: number };
+        Relationships: [
+          { foreignKeyName: 'order_items_order_id_fkey'; columns: ['order_id']; isOneToOne: false; referencedRelation: 'orders'; referencedColumns: ['id'] },
+        ];
+      };
+      orders: {
+        Row: {
+          buyer_id: string;
+          cancelled_at: string | null;
+          commission: number;
+          confirmed_at: string | null;
+          created_at: string;
+          delivered_at: string | null;
+          delivery_address: string | null;
+          delivery_city: string | null;
+          delivery_name: string | null;
+          delivery_phone: string | null;
+          id: string;
+          mobile_money_provider: string | null;
+          note: string | null;
+          payment_method: Enums['payment_method'];
+          shipped_at: string | null;
+          status: Enums['order_status'];
+          store_id: string;
+          total: number;
+          updated_at: string;
+        };
+        Insert: { store_id: string; total: number; buyer_id?: string; status?: Enums['order_status'] };
+        Update: { status?: Enums['order_status'] };
+        Relationships: [
+          { foreignKeyName: 'orders_store_id_fkey'; columns: ['store_id']; isOneToOne: false; referencedRelation: 'stores'; referencedColumns: ['id'] },
+        ];
       };
       product_images: {
         Row: { height: number; id: string; path: string; position: number; product_id: string; width: number };
@@ -48,7 +123,7 @@ export type Database = {
           old_price: number | null;
           price: number;
           sizes: string[];
-          status: ProductStatus;
+          status: Enums['product_status'];
           stock: number;
           store_id: string;
           updated_at: string;
@@ -67,7 +142,7 @@ export type Database = {
           old_price?: number | null;
           price: number;
           sizes?: string[];
-          status?: ProductStatus;
+          status?: Enums['product_status'];
           stock?: number;
           store_id: string;
           updated_at?: string;
@@ -80,9 +155,18 @@ export type Database = {
         ];
       };
       profiles: {
-        Row: { active_space: 'buyer' | 'seller'; created_at: string; full_name: string | null; id: string; phone: string | null; updated_at: string };
-        Insert: { active_space?: 'buyer' | 'seller'; created_at?: string; full_name?: string | null; id: string; phone?: string | null; updated_at?: string };
-        Update: { active_space?: 'buyer' | 'seller'; full_name?: string | null; phone?: string | null };
+        Row: {
+          active_space: Enums['app_space'];
+          address: string | null;
+          city: string | null;
+          created_at: string;
+          full_name: string | null;
+          id: string;
+          phone: string | null;
+          updated_at: string;
+        };
+        Insert: { id: string; active_space?: Enums['app_space']; address?: string | null; city?: string | null; full_name?: string | null; phone?: string | null };
+        Update: { active_space?: Enums['app_space']; address?: string | null; city?: string | null; full_name?: string | null; phone?: string | null };
         Relationships: [];
       };
       seller_details: {
@@ -91,7 +175,7 @@ export type Database = {
           full_name: string;
           id_document_path: string | null;
           phone: string;
-          seller_type: 'individual' | 'business';
+          seller_type: Enums['seller_type'];
           store_id: string;
           updated_at: string;
           whatsapp: string | null;
@@ -101,7 +185,7 @@ export type Database = {
           full_name: string;
           id_document_path?: string | null;
           phone: string;
-          seller_type?: 'individual' | 'business';
+          seller_type?: Enums['seller_type'];
           store_id: string;
           whatsapp?: string | null;
         };
@@ -129,9 +213,33 @@ export type Database = {
         Relationships: [];
       };
       storefront_settings: {
-        Row: { accent_color: string; contact_phone: string | null; hero_paths: string[]; promo_message: string | null; store_id: string; tagline: string | null; template: StorefrontTemplate; updated_at: string };
-        Insert: { accent_color?: string; contact_phone?: string | null; hero_paths?: string[]; promo_message?: string | null; store_id: string; tagline?: string | null; template?: StorefrontTemplate };
-        Update: { accent_color?: string; contact_phone?: string | null; hero_paths?: string[]; promo_message?: string | null; tagline?: string | null; template?: StorefrontTemplate };
+        Row: {
+          accent_color: string;
+          contact_phone: string | null;
+          hero_paths: string[];
+          promo_message: string | null;
+          store_id: string;
+          tagline: string | null;
+          template: Enums['storefront_template'];
+          updated_at: string;
+        };
+        Insert: {
+          accent_color?: string;
+          contact_phone?: string | null;
+          hero_paths?: string[];
+          promo_message?: string | null;
+          store_id: string;
+          tagline?: string | null;
+          template?: Enums['storefront_template'];
+        };
+        Update: {
+          accent_color?: string;
+          contact_phone?: string | null;
+          hero_paths?: string[];
+          promo_message?: string | null;
+          tagline?: string | null;
+          template?: Enums['storefront_template'];
+        };
         Relationships: [];
       };
       stores: {
@@ -149,7 +257,7 @@ export type Database = {
           rejection_reason: string | null;
           sales_enabled: boolean | null;
           slug: string;
-          status: StoreStatus;
+          status: Enums['store_status'];
           submitted_at: string | null;
           updated_at: string;
           verified_at: string | null;
@@ -195,7 +303,7 @@ export type Database = {
           sales_enabled: boolean | null;
           slug: string | null;
           tagline: string | null;
-          template: StorefrontTemplate | null;
+          template: Enums['storefront_template'] | null;
           verified: boolean | null;
         };
         Relationships: [];
@@ -203,19 +311,31 @@ export type Database = {
     };
     Functions: {
       is_slug_available: { Args: { p_slug: string }; Returns: boolean };
+      place_order: {
+        Args: {
+          p_delivery: Json;
+          p_items: Json;
+          p_note?: string;
+          p_payment?: Enums['payment_method'];
+          p_provider?: string;
+          p_store_id: string;
+        };
+        Returns: string;
+      };
       store_dashboard_stats: {
         Args: { p_store_id: string };
         Returns: { followers: number; orders_count: number; published_products: number; revenue: number; views_30d: number }[];
       };
-      submit_store_for_review: { Args: { p_store_id: string }; Returns: StoreStatus };
+      submit_store_for_review: { Args: { p_store_id: string }; Returns: Enums['store_status'] };
     };
     Enums: {
       app_space: 'buyer' | 'seller';
-      order_status: OrderStatus;
-      product_status: ProductStatus;
+      order_status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+      payment_method: 'cash_on_delivery' | 'mobile_money';
+      product_status: 'draft' | 'published' | 'hidden';
       seller_type: 'individual' | 'business';
-      store_status: StoreStatus;
-      storefront_template: StorefrontTemplate;
+      store_status: 'draft' | 'pending_review' | 'verified' | 'rejected' | 'suspended';
+      storefront_template: 'editorial' | 'mode' | 'beaute' | 'electronique' | 'alimentation' | 'generaliste';
     };
     CompositeTypes: { [_ in never]: never };
   };

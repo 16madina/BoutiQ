@@ -1,54 +1,68 @@
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, type Href } from 'expo-router';
-import { ArrowLeftRight, ChevronRight, Heart, LogOut, Package, Phone, ShoppingCart, Store, type LucideIcon } from 'lucide-react-native';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ArrowLeftRight, Bell, ChevronRight, Heart, LogOut, Phone, ShoppingCart, Store, UserRound, type LucideIcon } from 'lucide-react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { toPublicStore } from '@/api/sellerCatalog';
+import { useTabBarSpace } from '@/components/FloatingTabBar';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { PressableScale } from '@/components/PressableScale';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { StatusBadge } from '@/components/seller/StatusBadge';
 import { switchSpace } from '@/components/seller/SpaceSwitch';
 import { StoreAvatar } from '@/components/StoreAvatar';
-import { DEMO_USER } from '@/data/demo';
 import { useAuth } from '@/store/useAuth';
 import { useSeller } from '@/store/useSeller';
 import { colors, fonts, radii, shadows, spacing, typography } from '@/theme';
-import { photoUrl } from '@/utils/images';
+import { SheetAction, StoreSheet } from '@/components/storefront/StoreSheet';
+import { firstName, initialsOf, useProfile } from '@/store/useProfile';
 
+// Commandes et Boutiques sont des onglets : ici, ce qui n'a pas sa place dans la barre.
 const LINKS: { label: string; icon: LucideIcon; href: Href }[] = [
-  { label: 'Mes commandes', icon: Package, href: '/orders' },
   { label: 'Mes favoris', icon: Heart, href: '/favorites' },
   { label: 'Mon panier', icon: ShoppingCart, href: '/cart' },
-  { label: 'Boutiques', icon: Store, href: '/stores' },
+  { label: 'Notifications', icon: Bell, href: '/notifications' },
+  { label: 'Mes informations et ma livraison', icon: UserRound, href: '/profile' },
 ];
 
 export default function AccountScreen() {
+  const bottomSpace = useTabBarSpace();
   const session = useAuth((s) => s.session);
   const signOut = useAuth((s) => s.signOut);
   const store = useSeller((s) => s.store);
   const draftName = useSeller((s) => s.draft.name);
+  const fullName = useProfile((s) => s.fullName);
+  const profilePhone = useProfile((s) => s.phone);
+  const [confirmOut, setConfirmOut] = useState(false);
+  const hello = firstName(fullName);
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title="Mon compte" />
-      <ScrollView contentContainerStyle={{ padding: spacing.screen, gap: spacing.lg, paddingBottom: 48 }}>
+      <ScreenHeader title="Profil" back={false} large />
+      <ScrollView contentContainerStyle={{ padding: spacing.screen, paddingTop: spacing.xs, gap: spacing.lg, paddingBottom: bottomSpace }}>
         <View style={styles.profile}>
-          <Image source={{ uri: photoUrl(DEMO_USER.avatarPhotoId, 72, 1) }} style={styles.avatar} cachePolicy="memory-disk" />
+          <Pressable onPress={() => router.push('/profile')} style={styles.avatar} accessibilityRole="button" accessibilityLabel="Modifier mon profil">
+            {initialsOf(fullName) ? <Text style={styles.initials}>{initialsOf(fullName)}</Text> : <UserRound size={30} color={colors.white} strokeWidth={1.6} />}
+          </Pressable>
           <View style={{ flex: 1 }}>
-            <Text style={typography.h2}>Bonjour {DEMO_USER.firstName}</Text>
-            {session ? (
+            <Text style={typography.h2}>{hello ? `Bonjour ${hello}` : 'Bonjour'}</Text>
+            {session || profilePhone ? (
               <View style={styles.phoneRow}>
                 <Phone size={13} color={colors.textSecondary} strokeWidth={1.8} />
-                <Text style={typography.caption}>{session.phone}</Text>
+                <Text style={typography.caption}>{session?.phone ?? profilePhone}</Text>
               </View>
-            ) : (
+            ) : null}
+            {!session ? (
               <Text style={styles.signIn} onPress={() => router.push('/auth')}>
                 Se connecter par SMS
               </Text>
-            )}
+            ) : !fullName ? (
+              <Text style={styles.signIn} onPress={() => router.push('/profile')}>
+                Compléter mon profil
+              </Text>
+            ) : null}
           </View>
         </View>
 
@@ -97,20 +111,24 @@ export default function AccountScreen() {
         </View>
 
         {session && (
-          <Pressable
-            onPress={() =>
-              Alert.alert('Se déconnecter ?', 'Votre boutique reste enregistrée sur cet appareil.', [
-                { text: 'Annuler', style: 'cancel' },
-                { text: 'Se déconnecter', style: 'destructive', onPress: signOut },
-              ])
-            }
-            style={styles.logout}
-          >
+          <Pressable onPress={() => setConfirmOut(true)} style={styles.logout} accessibilityRole="button">
             <LogOut size={18} color={colors.textSecondary} strokeWidth={1.8} />
             <Text style={styles.logoutText}>Se déconnecter</Text>
           </Pressable>
         )}
       </ScrollView>
+      <StoreSheet visible={confirmOut} title="Se déconnecter ?" subtitle="Votre boutique, vos commandes et vos favoris restent enregistrés." onClose={() => setConfirmOut(false)}>
+        <SheetAction
+          icon={<LogOut size={18} color={colors.white} strokeWidth={2} />}
+          tint={colors.promo}
+          label="Se déconnecter"
+          onPress={() => {
+            setConfirmOut(false);
+            signOut();
+          }}
+        />
+        <SheetAction icon={<ChevronRight size={18} color={colors.cognac} strokeWidth={2} />} label="Annuler" onPress={() => setConfirmOut(false)} />
+      </StoreSheet>
     </View>
   );
 }
@@ -118,7 +136,8 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   profile: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  avatar: { width: 72, height: 72, borderRadius: 36, borderWidth: 2, borderColor: colors.champagne },
+  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.caramel, alignItems: 'center', justifyContent: 'center' },
+  initials: { fontFamily: fonts.bold, fontSize: 26, color: colors.white },
   phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
   signIn: { fontFamily: fonts.semibold, fontSize: 14, color: colors.caramel, marginTop: 3 },
   sellerCard: { padding: 16, gap: 14, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, ...shadows.soft },

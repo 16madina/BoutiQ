@@ -1,10 +1,13 @@
 import { router } from 'expo-router';
 import { Check, ChevronRight, FlaskConical } from 'lucide-react-native';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { pullSellerData, submitForReviewOnline } from '@/api/sellerSync';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import { supabaseEnabled } from '@/lib/supabase';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { FormField } from '@/components/seller/FormField';
 import { IdDocumentField } from '@/components/seller/IdDocumentField';
@@ -13,8 +16,8 @@ import { computeMissing, REQUIREMENT_LABELS, useSeller, type VerificationRequire
 import { colors, fonts, radii, spacing, typography } from '@/theme';
 import { haptics } from '@/utils/haptics';
 
-const FIX_ROUTES: Partial<Record<VerificationRequirement, '/seller/settings' | '/product-editor'>> = {
-  logo: '/seller/settings',
+const FIX_ROUTES: Partial<Record<VerificationRequirement, '/customize' | '/product-editor'>> = {
+  logo: '/customize',
   product: '/product-editor',
 };
 
@@ -27,7 +30,39 @@ export default function VerificationScreen() {
   const submitForReview = useSeller((s) => s.submitForReview);
   const demoReview = useSeller((s) => s.demoReview);
   const products = useSeller((s) => s.products);
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   if (!store) return null;
+
+  const send = async () => {
+    if (busyRef.current) return;
+    const stillMissing = computeMissing(store, details, products);
+    if (stillMissing.length) {
+      setMessage({ ok: false, text: `Il manque encore : ${stillMissing.map((m) => REQUIREMENT_LABELS[m].toLowerCase()).join(', ')}.` });
+      return;
+    }
+    // Sans Supabase (démo) : envoi simulé sur l'appareil.
+    if (!supabaseEnabled) {
+      submitForReview();
+      haptics.success();
+      return;
+    }
+    busyRef.current = true;
+    setBusy(true);
+    setMessage(null);
+    try {
+      await submitForReviewOnline();
+      haptics.success();
+      setMessage({ ok: true, text: 'Demande envoyée. L’équipe BoutiQ vérifie votre boutique, en général sous 48 h.' });
+    } catch (e) {
+      haptics.medium();
+      setMessage({ ok: false, text: (e as Error).message });
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  };
   const missing = computeMissing(store, details, products);
 
   const meta = STATUS_META[store.status];
@@ -66,7 +101,19 @@ export default function VerificationScreen() {
           </View>
         )}
 
-        {store.status === 'pending_review' && (
+        {message && (
+          <View style={[styles.message, { backgroundColor: message.ok ? '#E7EFDF' : '#F6E8D6' }]}>
+            <Text style={[styles.messageText, { color: message.ok ? '#2F5A2B' : colors.chocolate }]}>{message.text}</Text>
+          </View>
+        )}
+
+        {store.status === 'pending_review' && supabaseEnabled && (
+          <Text style={styles.refresh} onPress={() => pullSellerData().catch(() => {})} accessibilityRole="button">
+            Actualiser le statut
+          </Text>
+        )}
+
+        {store.status === 'pending_review' && !supabaseEnabled && (
           <View style={styles.demo}>
             <View style={styles.demoHeader}>
               <FlaskConical size={17} color={colors.chocolate} strokeWidth={1.8} />
@@ -84,16 +131,9 @@ export default function VerificationScreen() {
       {canSubmit && (
         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 14) }]}>
           <PrimaryButton
-            label={store.status === 'rejected' ? 'Renvoyer pour vérification' : 'Envoyer pour vérification'}
-            disabled={missing.length > 0}
-            onPress={() => {
-              const stillMissing = submitForReview();
-              if (stillMissing.length) {
-                Alert.alert('Il manque encore', stillMissing.map((m) => `• ${REQUIREMENT_LABELS[m]}`).join('\n'));
-                return;
-              }
-              haptics.success();
-            }}
+            label={busy ? 'Envoi en cours…' : store.status === 'rejected' ? 'Renvoyer pour vérification' : 'Envoyer pour vérification'}
+            disabled={missing.length > 0 || busy}
+            onPress={send}
           />
           {missing.length > 0 && <Text style={styles.footHint}>Complétez les éléments ci-dessus pour envoyer votre demande.</Text>}
         </View>
@@ -111,6 +151,9 @@ const styles = StyleSheet.create({
   reqCircle: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: colors.sand, alignItems: 'center', justifyContent: 'center' },
   reqCircleDone: { backgroundColor: colors.caramel, borderColor: colors.caramel },
   reqText: { flex: 1, fontFamily: fonts.medium, fontSize: 14.5, color: colors.text },
+  message: { padding: 14, borderRadius: radii.lg },
+  messageText: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20 },
+  refresh: { fontFamily: fonts.semibold, fontSize: 14.5, color: colors.cognac, textAlign: 'center', paddingVertical: 6 },
   demo: { padding: 16, borderRadius: radii.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sand, gap: 10 },
   demoHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   demoTitle: { fontFamily: fonts.semibold, fontSize: 14.5, color: colors.chocolate },

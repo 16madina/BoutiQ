@@ -4,6 +4,8 @@ import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { countProducts } from '@/api/catalog';
+import { useRemoteCatalog } from '@/api/remoteCatalog';
+import { useSeller } from '@/store/useSeller';
 import { useTabBarSpace } from '@/components/FloatingTabBar';
 import { PressableScale } from '@/components/PressableScale';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -14,6 +16,9 @@ import { photoUrl } from '@/utils/images';
 export default function CategoriesScreen() {
   const { width } = useWindowDimensions();
   const bottomSpace = useTabBarSpace();
+  // Recompte quand le catalogue en ligne ou les produits du vendeur changent.
+  useRemoteCatalog((s) => s.syncedAt);
+  useSeller((s) => s.products);
   const cardWidth = (width - spacing.screen * 2 - spacing.gridGap) / 2;
 
   return (
@@ -38,7 +43,12 @@ export default function CategoriesScreen() {
                   {c.emoji ? `${c.emoji}  ` : ''}
                   {c.name}
                 </Text>
-                <Text style={styles.count}>{countProducts({ categoryId: c.id })} articles</Text>
+                <Text style={styles.count}>
+                  {(() => {
+                    const n = countProducts({ categoryId: c.id });
+                    return `${n} article${n > 1 ? 's' : ''}`;
+                  })()}
+                </Text>
               </View>
             </PressableScale>
           );

@@ -83,6 +83,7 @@ export async function syncRemoteCatalog(): Promise<void> {
       stores.push({
         id: s.slug,
         slug: s.slug,
+        remoteId: s.id,
         name: s.name,
         city: s.city ?? '',
         country: s.country ?? '',
