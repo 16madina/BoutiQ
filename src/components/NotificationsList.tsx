@@ -107,9 +107,9 @@ export function NotificationsList({ bottomInset = 32 }: { bottomInset?: number }
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   item: { flexDirection: 'row', gap: 12, padding: 14, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  unread: { borderColor: colors.champagne, backgroundColor: '#FFF8EF' },
+  unread: { borderColor: colors.champagne, backgroundColor: colors.tintSoft },
   icon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.backgroundAlt, alignItems: 'center', justifyContent: 'center' },
   title: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text },
-  body: { ...typography.caption, fontSize: 13.5, color: '#4A433E', lineHeight: 19 },
+  body: { ...typography.caption, fontSize: 13.5, color: colors.textSoft, lineHeight: 19 },
   dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.caramel, marginTop: 6 },
 });

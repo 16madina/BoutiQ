@@ -1,11 +1,15 @@
 import { pullProfile } from '@/api/account';
 import { pullSellerData } from '@/api/sellerSync';
+import { syncRemoteCatalog } from '@/api/remoteCatalog';
 import { pullShopData } from '@/api/shopSync';
-import { ensureSession } from '@/lib/session';
+import { removeImages } from '@/lib/media';
+import { currentUser, ensureSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/store/useAuth';
 import { useProfile } from '@/store/useProfile';
 import { useSeller } from '@/store/useSeller';
+import { useSettings } from '@/store/useSettings';
+import { useShop } from '@/store/useShop';
 
 /**
  * Compte par e-mail et mot de passe.
@@ -118,4 +122,53 @@ export async function signOutAccount() {
     }
   }
   signOut();
+}
+
+/** L'appareil oublie tout ce qui appartenait au compte (boutique, profil, panier, favoris, réglages). */
+function forgetEverything() {
+  useSeller.setState({ store: null, details: null, products: [], storeViews: 0, space: 'buyer', productDraft: null });
+  useProfile.getState().update({ fullName: '', phone: '', city: '', address: '', avatar: undefined, memberSince: undefined });
+  useShop.setState({ cart: [], favorites: {}, followedStores: {}, promoCodes: {} });
+  useSettings.getState().set({ biometricLock: false });
+  useAuth.getState().signOut();
+}
+
+/** Y a-t-il un compte en ligne (même sans e-mail) à supprimer ? */
+export async function hasOnlineAccount(): Promise<boolean> {
+  return !!(await currentUser());
+}
+
+/**
+ * Supprime définitivement le compte et ses données (exigé par l'App Store et Google Play).
+ * Refusé par Supabase tant qu'une commande est en cours. Les ventes déjà terminées restent
+ * chez le vendeur, sans le nom, le téléphone ni l'adresse du client.
+ */
+export async function deleteAccount() {
+  const user = await currentUser();
+  if (supabase && user) {
+    // Commandes en cours : on s'arrête avant de toucher aux photos.
+    const { store, products, details } = useSeller.getState();
+    const mine = `buyer_id.eq.${user.id}${store?.remoteId ? `,store_id.eq.${store.remoteId}` : ''}`;
+    const { count } = await supabase.from('orders').select('id', { count: 'exact', head: true }).in('status', ['pending', 'confirmed', 'shipped']).or(mine);
+    if (count) throw new Error('Vous avez des commandes en cours. Terminez-les ou annulez-les avant de supprimer votre compte.');
+
+    // Photos envoyées en ligne (boutique, produits, profil) et pièce d'identité.
+    const media = [
+      ...products.flatMap((p) => p.photos.map((ph) => ph.remotePath)),
+      store?.logo?.remotePath,
+      ...(store?.banners ?? [store?.banner]).map((b) => b?.remotePath),
+      useProfile.getState().avatar?.remotePath,
+    ].filter((x): x is string => !!x);
+    await removeImages(media).catch(() => {});
+    if (details?.idDocument?.remotePath) await supabase.storage.from('seller-documents').remove([details.idDocument.remotePath]).catch(() => {});
+
+    const { error } = await supabase.rpc('delete_my_account');
+    if (error) {
+      if (error.code === 'P0001' && error.message) throw new Error(error.message);
+      throw new Error('Suppression impossible pour le moment. Vérifiez votre connexion et réessayez.');
+    }
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+    syncRemoteCatalog();
+  }
+  forgetEverything();
 }

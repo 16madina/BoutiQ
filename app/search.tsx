@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: colors.champagne,
-    backgroundColor: '#F6E8D6',
+    backgroundColor: colors.tint,
   },
   visualCtaText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.chocolate },
   resultsHeader: { paddingTop: spacing.xs, paddingBottom: spacing.md },
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     padding: 12,
     borderRadius: radii.md,
-    backgroundColor: '#F6E8D6',
+    backgroundColor: colors.tint,
   },
   visualText: { fontFamily: fonts.medium, fontSize: 13, color: colors.chocolate, flex: 1 },
 });

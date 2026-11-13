@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     height: 46,
     paddingHorizontal: 16,
     borderRadius: radii.pill,
-    backgroundColor: colors.white,
+    backgroundColor: colors.field,
     borderWidth: 1,
     borderColor: colors.border,
     fontFamily: fonts.regular,

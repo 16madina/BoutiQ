@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   groupHead: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 },
   groupName: { flex: 1, fontFamily: fonts.bold, fontSize: 15.5, color: colors.text },
   groupTotal: { fontFamily: fonts.semibold, fontSize: 14, color: colors.textSecondary },
-  note: { flexDirection: 'row', gap: 8, padding: 10, borderRadius: radii.md, backgroundColor: '#F6E8D6' },
+  note: { flexDirection: 'row', gap: 8, padding: 10, borderRadius: radii.md, backgroundColor: colors.tint },
   noteText: { flex: 1, fontFamily: fonts.medium, fontSize: 12.5, lineHeight: 17, color: colors.chocolate },
   line: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 6, borderRadius: radii.lg, backgroundColor: colors.background },
   thumb: { width: 72, height: 80, borderRadius: radii.md, backgroundColor: colors.champagne },

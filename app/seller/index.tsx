@@ -68,7 +68,7 @@ export default function SellerHome() {
         {todo > 0 ? (
           <Notice
             icon={ReceiptText}
-            bg="#F6E8D6"
+            bg={colors.tint}
             fg={colors.chocolate}
             text={todo > 1 ? `${todo} commandes à traiter` : '1 commande à traiter'}
             onPress={() => router.navigate('/seller/orders')}

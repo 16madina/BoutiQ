@@ -42,13 +42,13 @@ import { StoreAvatar } from '@/components/StoreAvatar';
 import { ProductGallery } from '@/components/product/ProductGallery';
 import { useSeller } from '@/store/useSeller';
 import { useShop } from '@/store/useShop';
-import { colors, fonts, radii, shadows, spacing, typography } from '@/theme';
+import { colors, fonts, isDark, radii, shadows, spacing, typography } from '@/theme';
 import { discountPercent, formatCount, formatFCFA } from '@/utils/format';
 import { COLOR_PRESETS } from '@/utils/productForm';
 import { haptics } from '@/utils/haptics';
 import { demoGallery, photoUrl, productImageUri, storeBannerUri } from '@/utils/images';
 
-const IN_STOCK = '#1E7B4A';
+const IN_STOCK = colors.success;
 const LOW_STOCK = 5;
 
 /** « 12 000 » et « FCFA » séparés, pour écrire le prix en grand et la devise en petit. */
@@ -294,11 +294,11 @@ export default function ProductScreen() {
             return (
               <View key={promo.id} style={[styles.offer, on && styles.couponOn]}>
                 <View>
-                  <TicketPercent size={19} strokeWidth={1.8} color={on ? '#2F5A2B' : colors.cognac} />
+                  <TicketPercent size={19} strokeWidth={1.8} color={on ? colors.successText : colors.cognac} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.offerTitle, on && { color: '#2F5A2B' }]}>Code promo {promo.code}</Text>
-                  <Text style={[styles.offerText, on && { color: '#2F5A2B' }]}>{on ? 'Activé : la réduction s’applique à la commande.' : promoSummary(promo)}</Text>
+                  <Text style={[styles.offerTitle, on && { color: colors.successText }]}>Code promo {promo.code}</Text>
+                  <Text style={[styles.offerText, on && { color: colors.successText }]}>{on ? 'Activé : la réduction s’applique à la commande.' : promoSummary(promo)}</Text>
                 </View>
                 {!isOwn && (
                   <Pressable
@@ -312,10 +312,10 @@ export default function ProductScreen() {
                   >
                     {on ? (
                       <View>
-                        <Check size={15} strokeWidth={2.4} color="#2F5A2B" />
+                        <Check size={15} strokeWidth={2.4} color={colors.successText} />
                       </View>
                     ) : null}
-                    <Text style={[styles.couponButtonText, on && { color: '#2F5A2B' }]}>{on ? 'Activé' : 'Activer'}</Text>
+                    <Text style={[styles.couponButtonText, on && { color: colors.successText }]}>{on ? 'Activé' : 'Activer'}</Text>
                   </Pressable>
                 )}
               </View>
@@ -611,7 +611,7 @@ export default function ProductScreen() {
               icon={<ShoppingBag size={18} color={colors.white} strokeWidth={1.9} />}
               style={{ flex: 1.6, paddingHorizontal: 12 }}
             />
-            <PrimaryButton label="Acheter" variant="caramel" onPress={() => onAdd(true)} style={{ flex: 1, paddingHorizontal: 12 }} />
+            <PrimaryButton label="Acheter" variant={isDark ? 'light' : 'caramel'} onPress={() => onAdd(true)} style={{ flex: 1, paddingHorizontal: 12 }} />
           </>
         )}
       </View>
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
   oldRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 10, rowGap: 6, marginTop: 6 },
   oldLabel: { fontFamily: fonts.regular, fontSize: 13.5, color: colors.textSecondary },
   oldValue: { textDecorationLine: 'line-through' },
-  saving: { backgroundColor: '#FCE9E7', borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 4 },
+  saving: { backgroundColor: colors.dangerBg, borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 4 },
   savingText: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.promo },
   offer: {
     flexDirection: 'row',
@@ -682,11 +682,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderStyle: 'dashed',
     borderColor: colors.caramel,
-    backgroundColor: '#FBF1E4',
+    backgroundColor: colors.tintSoft,
   },
-  couponOn: { borderColor: '#7FA878', backgroundColor: '#E7EFDF' },
+  couponOn: { borderColor: colors.successBorder, backgroundColor: colors.successBg },
   couponButton: { height: 34, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, borderRadius: radii.pill, backgroundColor: colors.buttonPrimary },
-  couponButtonOn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#7FA878' },
+  couponButtonOn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.successBorder },
   couponButtonText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.white },
   offerTitle: { fontFamily: fonts.bold, fontSize: 12.5, color: colors.cognac },
   offerText: { fontFamily: fonts.regular, fontSize: 13.5, color: colors.chocolate, marginTop: 1 },
@@ -725,15 +725,15 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   infoDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   infoTitle: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
-  infoText: { ...typography.caption, fontSize: 13, color: '#4A433E', marginTop: 1 },
+  infoText: { ...typography.caption, fontSize: 13, color: colors.textSoft, marginTop: 1 },
 
-  description: { ...typography.body, lineHeight: 23, color: '#3A3430' },
+  description: { ...typography.body, lineHeight: 23, color: colors.textBody },
   more: { fontFamily: fonts.semibold, fontSize: 14, color: colors.caramel },
   table: { borderRadius: radii.md, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   tableRow: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 10, gap: 12, backgroundColor: colors.surface },
   tableRowAlt: { backgroundColor: colors.backgroundAlt },
   tableLabel: { width: 118, fontFamily: fonts.semibold, fontSize: 13.5, color: colors.text },
-  tableValue: { flex: 1, fontFamily: fonts.regular, fontSize: 13.5, color: '#3A3430' },
+  tableValue: { flex: 1, fontFamily: fonts.regular, fontSize: 13.5, color: colors.textBody },
 
   storeCard: { borderRadius: radii.lg, backgroundColor: colors.surface, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, ...shadows.soft },
   storeBanner: { height: 96, backgroundColor: colors.champagne },
@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 16,
     borderRadius: radii.pill,
-    backgroundColor: '#F6E8D6',
+    backgroundColor: colors.tint,
     borderWidth: 1,
     borderColor: colors.champagne,
   },

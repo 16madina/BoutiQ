@@ -29,7 +29,7 @@ function Row({ item }: { item: Conversation }) {
       accessibilityRole="button"
       accessibilityLabel={`${item.title}, ${item.unread > 0 ? `${item.unread} non lu${item.unread > 1 ? 's' : ''}, ` : ''}${item.lastMessage}`}
     >
-      <View style={[styles.avatar, item.role === 'seller' && { backgroundColor: colors.cognac }]}>
+      <View style={[styles.avatar, item.role === 'seller' && { backgroundColor: colors.accentFill }]}>
         {logo ? <Image source={{ uri: logo }} style={StyleSheet.absoluteFill} contentFit="cover" onError={() => setLogoFailed(true)} /> : <Text style={styles.initials}>{initials(item.title)}</Text>}
       </View>
       <View style={{ flex: 1, gap: 3 }}>
@@ -117,7 +117,7 @@ export function MessagesInbox() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  rowUnread: { borderColor: colors.champagne, backgroundColor: '#FFF8EF' },
+  rowUnread: { borderColor: colors.champagne, backgroundColor: colors.tintSoft },
   avatar: { width: 50, height: 50, borderRadius: 25, overflow: 'hidden', backgroundColor: colors.caramel, alignItems: 'center', justifyContent: 'center' },
   initials: { fontFamily: fonts.bold, fontSize: 17, color: colors.white },
   top: { flexDirection: 'row', alignItems: 'center', gap: 8 },

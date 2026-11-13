@@ -139,7 +139,7 @@ export default function CheckoutScreen() {
       <View style={[styles.screen, styles.done, { paddingTop: insets.top + 70, paddingBottom: insets.bottom + 24 }]}>
         <Animated.View entering={FadeInDown.duration(380)} style={{ alignItems: 'center', gap: 14 }}>
           <View style={styles.doneIcon}>
-            <CircleCheck size={40} color="#3F6B3A" strokeWidth={1.8} />
+            <CircleCheck size={40} color={colors.success} strokeWidth={1.8} />
           </View>
           <Text style={styles.doneTitle}>{done > 1 ? `${done} commandes envoyées !` : 'Commande envoyée !'}</Text>
           <Text style={styles.doneText}>
@@ -216,7 +216,7 @@ export default function CheckoutScreen() {
           )}
           {err('provider') ? <Text style={styles.error}>{err('provider')}</Text> : null}
           <View style={styles.trust}>
-            <ShieldCheck size={18} color="#3F6B3A" strokeWidth={1.8} />
+            <ShieldCheck size={18} color={colors.success} strokeWidth={1.8} />
             <Text style={styles.trustText}>Vous ne payez rien maintenant. La vente est confirmée au vendeur quand vous touchez « J’ai reçu ma commande ».</Text>
           </View>
         </Section>
@@ -241,7 +241,7 @@ export default function CheckoutScreen() {
                 {promo ? (
                   <View style={styles.promoApplied}>
                     <View>
-                      <TicketPercent size={18} color="#3F6B3A" strokeWidth={1.9} />
+                      <TicketPercent size={18} color={colors.success} strokeWidth={1.9} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.promoAppliedText}>
@@ -358,8 +358,8 @@ const styles = StyleSheet.create({
   provider: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 44, paddingHorizontal: 14, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   providerDot: { width: 14, height: 14, borderRadius: 7 },
   providerText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
-  trust: { flexDirection: 'row', gap: 10, padding: 12, borderRadius: radii.md, backgroundColor: '#E7EFDF' },
-  trustText: { flex: 1, fontFamily: fonts.medium, fontSize: 13, lineHeight: 18, color: '#2F5A2B' },
+  trust: { flexDirection: 'row', gap: 10, padding: 12, borderRadius: radii.md, backgroundColor: colors.successBg },
+  trustText: { flex: 1, fontFamily: fonts.medium, fontSize: 13, lineHeight: 18, color: colors.successText },
   sumRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   sumStore: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text },
   sumPrice: { fontFamily: fonts.bold, fontSize: 15, color: colors.text },
@@ -368,20 +368,20 @@ const styles = StyleSheet.create({
   promoInput: { flex: 1, height: 44, fontFamily: fonts.semibold, fontSize: 15, letterSpacing: 0.5, color: colors.text, ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null) },
   promoButton: { height: 44, paddingHorizontal: 16, borderRadius: radii.md, backgroundColor: colors.buttonPrimary, alignItems: 'center', justifyContent: 'center' },
   promoButtonText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.white },
-  promoApplied: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: radii.md, backgroundColor: '#E7EFDF' },
-  promoAppliedText: { fontFamily: fonts.semibold, fontSize: 14, color: '#2F5A2B' },
-  promoRemove: { fontFamily: fonts.medium, fontSize: 12.5, color: '#2F5A2B', textDecorationLine: 'underline', marginTop: 1 },
-  promoAmount: { fontFamily: fonts.bold, fontSize: 14.5, color: '#2F5A2B' },
-  savingLabel: { fontFamily: fonts.medium, fontSize: 14.5, color: '#2F5A2B' },
-  savingValue: { fontFamily: fonts.bold, fontSize: 15, color: '#2F5A2B' },
+  promoApplied: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: radii.md, backgroundColor: colors.successBg },
+  promoAppliedText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.successText },
+  promoRemove: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.successText, textDecorationLine: 'underline', marginTop: 1 },
+  promoAmount: { fontFamily: fonts.bold, fontSize: 14.5, color: colors.successText },
+  savingLabel: { fontFamily: fonts.medium, fontSize: 14.5, color: colors.successText },
+  savingValue: { fontFamily: fonts.bold, fontSize: 15, color: colors.successText },
   sumTotal: { paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.border, justifyContent: 'space-between' },
   error: { fontFamily: fonts.medium, fontSize: 13, color: colors.promo },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, gap: 10, paddingHorizontal: spacing.screen, paddingTop: 12, backgroundColor: colors.background, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   errorBox: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   errorText: { flex: 1, fontFamily: fonts.semibold, fontSize: 13.5, color: colors.promo },
   done: { justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.screen + 4 },
-  doneIcon: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#E7EFDF', alignItems: 'center', justifyContent: 'center' },
+  doneIcon: { width: 90, height: 90, borderRadius: 45, backgroundColor: colors.successBg, alignItems: 'center', justifyContent: 'center' },
   doneTitle: { fontFamily: fonts.bold, fontSize: 26, color: colors.text, textAlign: 'center' },
-  doneText: { fontFamily: fonts.regular, fontSize: 15.5, lineHeight: 22, color: '#4A433E', textAlign: 'center' },
+  doneText: { fontFamily: fonts.regular, fontSize: 15.5, lineHeight: 22, color: colors.textSoft, textAlign: 'center' },
   link: { fontFamily: fonts.semibold, fontSize: 15, color: colors.cognac, textAlign: 'center', paddingVertical: 8 },
 });

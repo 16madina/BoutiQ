@@ -28,8 +28,8 @@ const FILTERS: { id: Filter; label: string }[] = [
 ];
 
 const STATUS: Record<ProductStatus, { label: string; bg: string; fg: string }> = {
-  published: { label: 'En vente', bg: '#E7EFDF', fg: '#3F6B3A' },
-  hidden: { label: 'Masqué', bg: '#ECE7E1', fg: '#5E5650' },
+  published: { label: 'En vente', bg: colors.successBg, fg: colors.success },
+  hidden: { label: 'Masqué', bg: colors.neutralBg, fg: colors.neutralText },
   draft: { label: 'Brouillon', bg: colors.backgroundAlt, fg: colors.tabInactive },
 };
 
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   filter: { paddingHorizontal: 14, height: 38, borderRadius: radii.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, justifyContent: 'center' },
   filterActive: { backgroundColor: colors.buttonPrimary, borderColor: colors.buttonPrimary },
   filterText: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.text },
-  message: { marginHorizontal: spacing.screen, marginBottom: 10, padding: 12, borderRadius: radii.md, backgroundColor: '#F6E8D6' },
+  message: { marginHorizontal: spacing.screen, marginBottom: 10, padding: 12, borderRadius: radii.md, backgroundColor: colors.tint },
   messageText: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.chocolate, lineHeight: 19 },
   row: {
     flexDirection: 'row',
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
   thumbEmpty: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundAlt },
   badges: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 4, borderRadius: radii.pill },
-  badgeWarn: { backgroundColor: '#F6E8D6' },
+  badgeWarn: { backgroundColor: colors.tint },
   badgeText: { fontFamily: fonts.semibold, fontSize: 11.5 },
   more: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundAlt },
 });

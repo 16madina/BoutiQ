@@ -118,7 +118,7 @@ export type Database = {
       };
       orders: {
         Row: {
-          buyer_id: string;
+          buyer_id: string | null;
           cancelled_at: string | null;
           commission: number;
           confirmed_at: string | null;
@@ -382,6 +382,7 @@ export type Database = {
       };
       admin_review_store: { Args: { p_store_id: string; p_decision: Enums['store_status']; p_reason?: string }; Returns: undefined };
       is_admin: { Args: Record<string, never>; Returns: boolean };
+      delete_my_account: { Args: Record<string, never>; Returns: undefined };
       mark_conversation_read: { Args: { p_conversation_id: string }; Returns: undefined };
       my_conversations: {
         Args: Record<string, never>;

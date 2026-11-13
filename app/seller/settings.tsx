@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   address: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, height: 48, borderRadius: radii.md, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
   addressText: { flex: 1, fontFamily: fonts.medium, fontSize: 14, color: colors.text },
   shareRow: { flexDirection: 'row', gap: 10 },
-  shareBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 46, borderRadius: radii.pill, backgroundColor: '#F6E8D6', borderWidth: 1, borderColor: colors.champagne },
+  shareBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 46, borderRadius: radii.pill, backgroundColor: colors.tint, borderWidth: 1, borderColor: colors.champagne },
   shareText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
   hint: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.textSecondary },
   list: { borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, paddingHorizontal: 14 },
@@ -270,6 +270,6 @@ const styles = StyleSheet.create({
   rowIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.backgroundAlt, alignItems: 'center', justifyContent: 'center' },
   rowTitle: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text },
   rowDetail: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
-  notice: { padding: 12, borderRadius: radii.md, backgroundColor: '#F6E8D6', fontFamily: fonts.medium, fontSize: 13.5, color: colors.chocolate, lineHeight: 19 },
+  notice: { padding: 12, borderRadius: radii.md, backgroundColor: colors.tint, fontFamily: fonts.medium, fontSize: 13.5, color: colors.chocolate, lineHeight: 19 },
   danger: { fontFamily: fonts.medium, fontSize: 14, color: colors.promo, textAlign: 'center', paddingVertical: 8 },
 });

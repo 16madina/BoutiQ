@@ -59,9 +59,9 @@ export default function ProfileScreen() {
         <FormField label="Ville" value={city} onChangeText={setCity} autoCapitalize="words" placeholder="Ex. Abidjan" />
         <FormField label="Adresse ou repère" optional value={address} onChangeText={(t) => setAddress(t.slice(0, 160))} placeholder="Quartier, rue, à côté de…" />
         {message && (
-          <Animated.View entering={FadeIn} style={[styles.message, { backgroundColor: message.ok ? '#E7EFDF' : '#F6E8D6' }]}>
-            {message.ok && <CircleCheck size={17} color="#3F6B3A" strokeWidth={2} />}
-            <Text style={[styles.messageText, { color: message.ok ? '#2F5A2B' : colors.chocolate }]}>{message.text}</Text>
+          <Animated.View entering={FadeIn} style={[styles.message, { backgroundColor: message.ok ? colors.successBg : colors.tint }]}>
+            {message.ok && <CircleCheck size={17} color={colors.success} strokeWidth={2} />}
+            <Text style={[styles.messageText, { color: message.ok ? colors.successText : colors.chocolate }]}>{message.text}</Text>
           </Animated.View>
         )}
       </ScrollView>

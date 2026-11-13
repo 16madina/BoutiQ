@@ -18,10 +18,11 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { pullProfile } from '@/api/account';
 import { syncRemoteCatalog } from '@/api/remoteCatalog';
 import { pullShopData, startShopSync } from '@/api/shopSync';
-import { colors } from '@/theme';
+import { colors, isDark } from '@/theme';
 import { isPhonePreview, PREVIEW_INSETS } from '@/utils/devicePreview';
 import { useShop } from '@/store/useShop';
 import { restoreAccountSession } from '@/api/authAccount';
+import { AppLock } from '@/components/AppLock';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
@@ -58,7 +59,7 @@ export default function RootLayout() {
 
   const app = (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -87,6 +88,8 @@ export default function RootLayout() {
         <Stack.Screen name="verification" />
         <Stack.Screen name="moderation" />
         <Stack.Screen name="promo-codes" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="legal/[doc]" />
         <Stack.Screen
           name="select"
           options={{
@@ -108,6 +111,8 @@ export default function RootLayout() {
           }}
         />
       </Stack>
+      {/* Verrouillage par Face ID / empreinte, quand il est activé dans les Paramètres. */}
+      <AppLock />
     </GestureHandlerRootView>
   );
 

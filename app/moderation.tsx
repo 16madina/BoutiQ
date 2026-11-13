@@ -187,7 +187,7 @@ export default function ModerationScreen() {
               )}
               {item.status === 'verified' && (
                 <View style={styles.verified}>
-                  <BadgeCheck size={16} color="#3F6B3A" strokeWidth={2} />
+                  <BadgeCheck size={16} color={colors.success} strokeWidth={2} />
                   <Text style={styles.verifiedText}>Boutique vérifiée</Text>
                 </View>
               )}
@@ -204,7 +204,7 @@ export default function ModerationScreen() {
       >
         <SheetAction
           icon={<Check size={18} color={colors.white} strokeWidth={2.4} />}
-          tint="#3F6B3A"
+          tint={colors.success}
           label={busy ? 'Un instant…' : 'Oui, approuver'}
           onPress={() => approving && decide(approving, 'verified')}
         />
@@ -253,20 +253,20 @@ const styles = StyleSheet.create({
   filter: { paddingHorizontal: 14, height: 38, borderRadius: radii.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, justifyContent: 'center' },
   filterActive: { backgroundColor: colors.buttonPrimary, borderColor: colors.buttonPrimary },
   filterText: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.text },
-  error: { marginHorizontal: spacing.screen, marginBottom: 10, padding: 12, borderRadius: radii.md, backgroundColor: '#F6E8D6', fontFamily: fonts.medium, fontSize: 13.5, color: colors.chocolate, lineHeight: 19 },
+  error: { marginHorizontal: spacing.screen, marginBottom: 10, padding: 12, borderRadius: radii.md, backgroundColor: colors.tint, fontFamily: fonts.medium, fontSize: 13.5, color: colors.chocolate, lineHeight: 19 },
   card: { padding: 16, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, gap: 12 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   name: { fontFamily: fonts.bold, fontSize: 17, color: colors.text },
   meta: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
-  description: { fontFamily: fonts.regular, fontSize: 14, color: '#4A433E', lineHeight: 20 },
+  description: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSoft, lineHeight: 20 },
   facts: { gap: 8, padding: 12, borderRadius: radii.md, backgroundColor: colors.background },
   fact: { flexDirection: 'row', gap: 10 },
   factLabel: { width: 118, fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
   factValue: { flex: 1, fontFamily: fonts.semibold, fontSize: 13.5, color: colors.text },
   links: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  link: { flexDirection: 'row', alignItems: 'center', gap: 7, height: 40, paddingHorizontal: 13, borderRadius: radii.pill, backgroundColor: '#F6E8D6', borderWidth: 1, borderColor: colors.champagne },
+  link: { flexDirection: 'row', alignItems: 'center', gap: 7, height: 40, paddingHorizontal: 13, borderRadius: radii.pill, backgroundColor: colors.tint, borderWidth: 1, borderColor: colors.champagne },
   linkText: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.chocolate },
   actions: { flexDirection: 'row', gap: 10 },
   verified: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  verifiedText: { fontFamily: fonts.semibold, fontSize: 13.5, color: '#3F6B3A' },
+  verifiedText: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.success },
 });

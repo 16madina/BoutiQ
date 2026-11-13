@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   gridCell: { width: (INNER - 16 - 8) / 3, height: 20, borderRadius: 5, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   check: { position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: 11, backgroundColor: colors.text, alignItems: 'center', justifyContent: 'center' },
   label: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.text, textAlign: 'center' },
-  recommended: { alignSelf: 'center', fontFamily: fonts.semibold, fontSize: 11, color: '#3F6B3A', backgroundColor: '#E7EFDF', paddingHorizontal: 8, paddingVertical: 2, borderRadius: radii.pill, overflow: 'hidden' },
+  recommended: { alignSelf: 'center', fontFamily: fonts.semibold, fontSize: 11, color: colors.success, backgroundColor: colors.successBg, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radii.pill, overflow: 'hidden' },
   sub: { fontSize: 11 },
   see: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 34, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   seeText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.text },

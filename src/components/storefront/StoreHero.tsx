@@ -283,7 +283,7 @@ function CollageHero(props: Props) {
       <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.editorialText}>
         <HeroTitle sf={sf} color={colors.text} size={26} serif align="center" upper />
         {sf.store.description ? (
-          <Text style={[styles.heroSub, { textAlign: 'center', color: '#4A433E' }]} numberOfLines={2}>
+          <Text style={[styles.heroSub, { textAlign: 'center', color: colors.textSoft }]} numberOfLines={2}>
             {sf.store.description}
           </Text>
         ) : null}
@@ -605,14 +605,14 @@ const styles = StyleSheet.create({
   // Barre d'informations
   infoMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: spacing.screen, paddingTop: 14 },
   infoActions: { paddingHorizontal: spacing.screen, paddingTop: 12 },
-  pending: { backgroundColor: '#F6E8D6', paddingVertical: 9, paddingHorizontal: spacing.screen, marginTop: 14 },
+  pending: { backgroundColor: colors.tint, paddingVertical: 9, paddingHorizontal: spacing.screen, marginTop: 14 },
   pendingText: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.chocolate, textAlign: 'center' },
 
   // Beauté
   identity: { gap: 12 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   name: { letterSpacing: -0.6, flexShrink: 1 },
-  tagline: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21, color: '#3A3430' },
+  tagline: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21, color: colors.textBody },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   meta: { fontFamily: fonts.medium, fontSize: 12.5, letterSpacing: 0.1, color: colors.textSecondary },
   actions: { flexDirection: 'row', gap: 8 },

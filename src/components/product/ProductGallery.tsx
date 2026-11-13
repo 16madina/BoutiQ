@@ -36,7 +36,7 @@ export function ProductGallery({ images, width, height, placeholder, children }:
 
   return (
     <View>
-      <View style={{ width, height, backgroundColor: colors.white }}>
+      <View style={{ width, height, backgroundColor: colors.field }}>
         <ScrollView
           ref={scroller}
           horizontal
@@ -51,7 +51,7 @@ export function ProductGallery({ images, width, height, placeholder, children }:
               key={uri + i}
               source={{ uri }}
               placeholder={i === 0 && placeholder ? { uri: placeholder } : undefined}
-              style={{ width, height, backgroundColor: '#F1E6D8' }}
+              style={{ width, height, backgroundColor: colors.placeholder }}
               contentFit="cover"
               transition={250}
               cachePolicy="memory-disk"
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.sand, opacity: 0.6 },
   dotActive: { backgroundColor: colors.caramel, opacity: 1, width: 18 },
   thumbs: { paddingHorizontal: spacing.screen, paddingTop: 10, gap: 8 },
-  thumb: { width: THUMB, height: THUMB, borderRadius: radii.sm, overflow: 'hidden', borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.white },
+  thumb: { width: THUMB, height: THUMB, borderRadius: radii.sm, overflow: 'hidden', borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.field },
   thumbActive: { borderColor: colors.caramel },
   thumbImage: { width: '100%', height: '100%' },
 });

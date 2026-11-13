@@ -102,8 +102,8 @@ export default function VerificationScreen() {
         )}
 
         {message && (
-          <View style={[styles.message, { backgroundColor: message.ok ? '#E7EFDF' : '#F6E8D6' }]}>
-            <Text style={[styles.messageText, { color: message.ok ? '#2F5A2B' : colors.chocolate }]}>{message.text}</Text>
+          <View style={[styles.message, { backgroundColor: message.ok ? colors.successBg : colors.tint }]}>
+            <Text style={[styles.messageText, { color: message.ok ? colors.successText : colors.chocolate }]}>{message.text}</Text>
           </View>
         )}
 
@@ -145,7 +145,7 @@ export default function VerificationScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   statusCard: { padding: 18, borderRadius: radii.lg, gap: 10 },
-  statusText: { fontFamily: fonts.regular, fontSize: 14, color: '#3A3430', lineHeight: 20 },
+  statusText: { fontFamily: fonts.regular, fontSize: 14, color: colors.textBody, lineHeight: 20 },
   card: { padding: 16, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, gap: 4 },
   reqRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   reqCircle: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: colors.sand, alignItems: 'center', justifyContent: 'center' },

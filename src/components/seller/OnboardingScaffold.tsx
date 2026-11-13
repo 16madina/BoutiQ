@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dotFilled: { backgroundColor: colors.cognac, borderColor: colors.cognac },
+  dotFilled: { backgroundColor: colors.accentFill, borderColor: colors.cognac },
   dotText: { fontFamily: fonts.bold, fontSize: 14, color: colors.chocolate },
   dotLabel: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.textSecondary },
   dotLabelOn: { fontFamily: fonts.semibold, color: colors.chocolate },

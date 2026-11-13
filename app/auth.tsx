@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   dial: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text },
   reassure: { flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center' },
   reassureText: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
-  demo: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: radii.md, backgroundColor: '#F6E8D6', borderWidth: 1, borderColor: colors.champagne },
+  demo: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: radii.md, backgroundColor: colors.tint, borderWidth: 1, borderColor: colors.champagne },
   demoText: { flex: 1, fontFamily: fonts.regular, fontSize: 13.5, color: colors.chocolate },
   codeRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   codeBox: {
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     aspectRatio: 0.85,
     maxWidth: 56,
     borderRadius: radii.md,
-    backgroundColor: colors.white,
+    backgroundColor: colors.field,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
   method: { flex: 1, height: 40, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' },
   methodOn: { backgroundColor: colors.buttonPrimary },
   methodText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
-  mailIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#F6E8D6', alignItems: 'center', justifyContent: 'center' },
-  info: { fontFamily: fonts.medium, fontSize: 13.5, color: '#2F5A2B', padding: 12, borderRadius: radii.md, backgroundColor: '#E7EFDF', lineHeight: 19 },
+  mailIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.tint, alignItems: 'center', justifyContent: 'center' },
+  info: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.successText, padding: 12, borderRadius: radii.md, backgroundColor: colors.successBg, lineHeight: 19 },
   resend: { fontFamily: fonts.medium, fontSize: 14.5, color: colors.cognac, textAlign: 'center' },
 });

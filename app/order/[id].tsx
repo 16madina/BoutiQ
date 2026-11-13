@@ -190,7 +190,7 @@ export default function OrderScreen() {
         </Card>
         {order.status === 'delivered' && !seller && (
           <View style={styles.thanks}>
-            <CircleCheck size={20} color="#3F6B3A" strokeWidth={1.8} />
+            <CircleCheck size={20} color={colors.success} strokeWidth={1.8} />
             <Text style={styles.thanksText}>Merci ! La vente est validée pour le vendeur.</Text>
           </View>
         )}
@@ -213,7 +213,7 @@ export default function OrderScreen() {
           <>
             <SheetAction
               icon={pending.danger ? <X size={18} color={colors.white} strokeWidth={2.2} /> : <Check size={18} color={colors.white} strokeWidth={2.4} />}
-              tint={pending.danger ? colors.promo : '#3F6B3A'}
+              tint={pending.danger ? colors.promo : colors.success}
               label={pending.danger ? 'Oui, annuler' : 'Oui, confirmer'}
               onPress={() => run(pending)}
             />
@@ -247,7 +247,7 @@ function Line({ label, value, strong }: { label: string; value: string; strong?:
   return (
     <View style={[styles.sumRow, { paddingTop: 6, borderTopWidth: 0 }]}>
       <Text style={[typography.caption, strong && { fontFamily: fonts.semibold, color: colors.text, fontSize: 14 }]}>{label}</Text>
-      <Text style={[styles.itemTotal, strong && { color: '#3F6B3A' }]}>{value}</Text>
+      <Text style={[styles.itemTotal, strong && { color: colors.success }]}>{value}</Text>
     </View>
   );
 }
@@ -256,12 +256,12 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   statusCard: { padding: 16, borderRadius: radii.xl, gap: 4 },
   statusLabel: { fontFamily: fonts.bold, fontSize: 20 },
-  statusText: { fontFamily: fonts.medium, fontSize: 13.5, color: '#4A433E' },
+  statusText: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.textSoft },
   card: { gap: 12, padding: 16, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, ...shadows.soft },
   cardTitle: { fontFamily: fonts.bold, fontSize: 16.5, color: colors.text },
   step: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   stepDot: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: colors.sand, alignItems: 'center', justifyContent: 'center' },
-  stepDotOn: { backgroundColor: '#3F6B3A', borderColor: '#3F6B3A' },
+  stepDotOn: { backgroundColor: colors.success, borderColor: colors.success },
   stepLabel: { fontFamily: fonts.semibold, fontSize: 14.5, color: colors.text },
   item: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   thumb: { width: 56, height: 62, borderRadius: 12, backgroundColor: colors.champagne },
@@ -272,8 +272,8 @@ const styles = StyleSheet.create({
   contactRow: { flexDirection: 'row', gap: 10 },
   contact: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 46, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background },
   contactText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
-  thanks: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: radii.lg, backgroundColor: '#E7EFDF' },
-  thanksText: { flex: 1, fontFamily: fonts.semibold, fontSize: 14, color: '#2F5A2B' },
+  thanks: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: radii.lg, backgroundColor: colors.successBg },
+  thanksText: { flex: 1, fontFamily: fonts.semibold, fontSize: 14, color: colors.successText },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, gap: 8, paddingHorizontal: spacing.screen, paddingTop: 12, backgroundColor: colors.background, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   error: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.promo, textAlign: 'center' },
   danger: { fontFamily: fonts.semibold, fontSize: 15, color: colors.promo, textAlign: 'center', paddingVertical: 8 },

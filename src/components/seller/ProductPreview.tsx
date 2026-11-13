@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   variantRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 14, borderRadius: radii.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   variantLabel: { fontFamily: fonts.medium, fontSize: 14, color: colors.text },
   variantPrice: { fontFamily: fonts.bold, fontSize: 14, color: colors.text },
-  description: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: '#3A3430' },
+  description: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.textBody },
   delivery: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 13, borderRadius: radii.md, backgroundColor: colors.backgroundAlt },
   deliveryText: { flex: 1, fontFamily: fonts.medium, fontSize: 13.5, color: colors.text },
 });

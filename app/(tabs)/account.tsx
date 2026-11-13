@@ -99,7 +99,6 @@ export default function AccountScreen() {
   const cart = useCartCount();
   const unread = useUnreadNotifications();
 
-  const [menu, setMenu] = useState(false);
   const [confirmOut, setConfirmOut] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [bannerFailed, setBannerFailed] = useState(false);
@@ -167,7 +166,7 @@ export default function AccountScreen() {
                   </View>
                 )}
               </Pressable>
-              <Pressable onPress={() => setMenu(true)} hitSlop={6} style={styles.topIcon} accessibilityRole="button" accessibilityLabel="Réglages du compte">
+              <Pressable onPress={() => router.push('/settings')} hitSlop={6} style={styles.topIcon} accessibilityRole="button" accessibilityLabel="Paramètres">
                 <Settings size={24} color={CREAM} strokeWidth={1.7} />
               </Pressable>
             </View>
@@ -316,44 +315,6 @@ export default function AccountScreen() {
         </View>
       </ScrollView>
 
-      <StoreSheet visible={menu} title="Mon compte" onClose={() => setMenu(false)}>
-        <SheetAction
-          icon={<Camera size={18} color={colors.cognac} strokeWidth={1.9} />}
-          label="Changer ma photo de profil"
-          onPress={() => {
-            setMenu(false);
-            changePhoto();
-          }}
-        />
-        <SheetAction
-          icon={<Pencil size={18} color={colors.cognac} strokeWidth={1.9} />}
-          label="Mes informations et ma livraison"
-          onPress={() => {
-            setMenu(false);
-            router.push('/profile');
-          }}
-        />
-        {session ? (
-          <SheetAction
-            icon={<LogOut size={18} color={colors.cognac} strokeWidth={1.9} />}
-            label="Se déconnecter"
-            onPress={() => {
-              setMenu(false);
-              setConfirmOut(true);
-            }}
-          />
-        ) : (
-          <SheetAction
-            icon={<UserRound size={18} color={colors.cognac} strokeWidth={1.9} />}
-            label="Se connecter ou créer un compte"
-            onPress={() => {
-              setMenu(false);
-              router.push('/auth');
-            }}
-          />
-        )}
-      </StoreSheet>
-
       <StoreSheet
         visible={confirmOut}
         title="Se déconnecter ?"
@@ -424,7 +385,7 @@ const styles = StyleSheet.create({
   edit: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,247,236,0.35)', backgroundColor: 'rgba(255,247,236,0.08)', alignItems: 'center', justifyContent: 'center' },
 
   body: { paddingHorizontal: spacing.screen, gap: 16, marginTop: -40 },
-  notice: { padding: 12, borderRadius: radii.md, backgroundColor: '#F6E8D6', fontFamily: fonts.medium, fontSize: 13.5, color: colors.chocolate, lineHeight: 19 },
+  notice: { padding: 12, borderRadius: radii.md, backgroundColor: colors.tint, fontFamily: fonts.medium, fontSize: 13.5, color: colors.chocolate, lineHeight: 19 },
 
   storeCard: { borderRadius: 26, backgroundColor: colors.surface, padding: 12, gap: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, ...shadows.card },
   storeTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },

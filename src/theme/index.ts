@@ -1,7 +1,23 @@
-import { Platform, type ViewStyle } from 'react-native';
+import { Appearance, Platform, type ViewStyle } from 'react-native';
 
-/** Palette officielle BoutiQ — ne pas modifier sans validation de la direction artistique. */
-export const colors = {
+import { readThemePreference, resolveScheme, type ThemePreference } from './preference';
+
+/** Choix fait dans Paramètres → Apparence, lu une fois au démarrage. */
+export const themePreference: ThemePreference = readThemePreference();
+export const scheme = resolveScheme(themePreference);
+export const isDark = scheme === 'dark';
+
+// Thème forcé (Clair ou Sombre) : le clavier et les fenêtres du système suivent aussi.
+if (Platform.OS !== 'web' && themePreference !== 'system') {
+  try {
+    Appearance.setColorScheme(themePreference);
+  } catch {
+    // Ancienne version du système : seules les couleurs de l'application changent.
+  }
+}
+
+/** Palette officielle BoutiQ (mode clair) — ne pas modifier sans validation de la direction artistique. */
+const light = {
   background: '#FAF6F0', // Ivoire chaleureux
   backgroundAlt: '#F5EDE3', // Crème
   surface: '#FFFCF8', // Blanc cassé
@@ -23,7 +39,91 @@ export const colors = {
   overlayLight: 'rgba(255,252,248,0.92)',
   skeleton: '#EFE5D9',
   skeletonHighlight: '#F7F0E7',
-} as const;
+
+  // Teintes d'usage (elles changent avec le thème, contrairement à une couleur écrite en dur).
+  /** Texte courant un peu adouci (descriptions). */
+  textBody: '#3A3430',
+  textSoft: '#4A433E',
+  /** Fond des champs de saisie et des vignettes. */
+  field: '#FFFFFF',
+  /** Fond d'une photo pendant son chargement. */
+  placeholder: '#F1E6D8',
+  /** Aplat brun des éléments de marque (bulle, pastille, bannière) : texte clair dessus dans les deux thèmes. */
+  accentFill: '#8A542C',
+  /** Encadré doux (information, bouton secondaire). */
+  tint: '#F6E8D6',
+  tintSoft: '#FBF1E4',
+  /** Réussite : encadré, icône, texte. */
+  successBg: '#E7EFDF',
+  success: '#3F6B3A',
+  successText: '#2F5A2B',
+  successBorder: '#7FA878',
+  /** Alerte : encadré. */
+  dangerBg: '#FCE9E7',
+  /** Étiquette neutre (désactivé, annulé). */
+  neutralBg: '#ECE7E1',
+  neutralText: '#5E5650',
+  /** Fond de l'écran, transparent (dégradés qui s'effacent). */
+  backgroundClear: 'rgba(250,246,240,0)',
+  backgroundVeil: 'rgba(250,246,240,0.85)',
+  /** Voiles des surfaces « verre ». */
+  glassFill: 'rgba(255,252,248,0.97)',
+  glassVeil: 'rgba(250,246,240,0.72)',
+  glassTint: 'rgba(250,246,240,0.55)',
+};
+
+type Palette = { [K in keyof typeof light]: string };
+
+/**
+ * Mode sombre : brun chocolat chaud (et non noir), dans les couleurs de la marque.
+ * Mêmes rôles que la palette claire ; les accents caramel sont éclaircis pour rester lisibles.
+ */
+const dark: Palette = {
+  background: '#2A1F18',
+  backgroundAlt: '#33261D',
+  surface: '#3A2C22',
+  white: '#FFFFFF',
+  champagne: '#6B523C',
+  sand: '#7A5F47',
+  caramel: '#D49A5B',
+  gold: '#E0B64A',
+  cognac: '#E8B47C',
+  chocolate: '#F3E2CC',
+  text: '#FBF4EA',
+  textSecondary: '#CDBDAD',
+  textMuted: '#A08E7D',
+  tabInactive: '#DCCFC1',
+  border: '#544234',
+  // Boutons principaux : caramel (un bouton noir ne se verrait pas sur un fond foncé).
+  buttonPrimary: '#C98A4B',
+  promo: '#EC6A62',
+  favorite: '#EC6A62',
+  overlayLight: 'rgba(58,44,34,0.92)',
+  skeleton: '#3F3026',
+  skeletonHighlight: '#4A392D',
+
+  textBody: '#EADFD2',
+  textSoft: '#D6C8B9',
+  field: '#30241B',
+  accentFill: '#9A5E30',
+  placeholder: '#43342A',
+  tint: '#463528',
+  tintSoft: '#3F3025',
+  successBg: '#2F3A27',
+  success: '#A2D29A',
+  successText: '#BCE0B4',
+  successBorder: '#5E8A57',
+  dangerBg: '#4F2A26',
+  neutralBg: '#44372D',
+  neutralText: '#CDBDAD',
+  backgroundClear: 'rgba(42,31,24,0)',
+  backgroundVeil: 'rgba(42,31,24,0.85)',
+  glassFill: 'rgba(52,39,30,0.97)',
+  glassVeil: 'rgba(42,31,24,0.72)',
+  glassTint: 'rgba(42,31,24,0.55)',
+};
+
+export const colors: Palette = isDark ? dark : light;
 
 export const gradients = {
   logo: ['#C98A4B', '#8A542C', '#58351F'] as const,
@@ -43,7 +143,7 @@ export const fonts = {
 
 export const typography = {
   brand: { fontFamily: fonts.extrabold, fontSize: 27, letterSpacing: -0.8, color: colors.text },
-  tagline: { fontFamily: fonts.regular, fontSize: 13, color: '#2E2A27' },
+  tagline: { fontFamily: fonts.regular, fontSize: 13, color: colors.textBody },
   h1: { fontFamily: fonts.bold, fontSize: 26, letterSpacing: -0.5, color: colors.text },
   h2: { fontFamily: fonts.bold, fontSize: 20, letterSpacing: -0.3, color: colors.text },
   h3: { fontFamily: fonts.semibold, fontSize: 17, color: colors.text },
@@ -86,13 +186,13 @@ export const radii = {
 function shadow(opacity: number, radius: number, y: number, elevation: number): ViewStyle {
   return Platform.select<ViewStyle>({
     ios: {
-      shadowColor: '#58351F',
-      shadowOpacity: opacity,
+      shadowColor: isDark ? '#000000' : '#58351F',
+      shadowOpacity: isDark ? opacity * 3 : opacity,
       shadowRadius: radius,
       shadowOffset: { width: 0, height: y },
     },
-    android: { elevation, shadowColor: '#58351F' },
-    default: { boxShadow: `0px ${y}px ${radius * 2}px rgba(88,53,31,${opacity})` } as ViewStyle,
+    android: { elevation, shadowColor: isDark ? '#000000' : '#58351F' },
+    default: { boxShadow: isDark ? `0px ${y}px ${radius * 2}px rgba(0,0,0,${opacity * 3})` : `0px ${y}px ${radius * 2}px rgba(88,53,31,${opacity})` } as ViewStyle,
   })!;
 }
 

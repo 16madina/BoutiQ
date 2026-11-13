@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   address: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.caramel, marginTop: 2 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
   metaText: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.textSecondary },
-  description: { fontFamily: fonts.regular, fontSize: 13, color: '#4A433E', marginTop: 8, lineHeight: 18 },
+  description: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSoft, marginTop: 8, lineHeight: 18 },
   chips: { flexDirection: 'row', gap: 6, marginTop: 12, flexWrap: 'wrap' },
   chip: { paddingHorizontal: 11, height: 28, borderRadius: radii.pill, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, justifyContent: 'center' },
   chipActive: { backgroundColor: colors.buttonPrimary, borderColor: colors.buttonPrimary },

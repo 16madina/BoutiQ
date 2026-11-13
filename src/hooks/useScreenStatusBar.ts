@@ -2,6 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback } from 'react';
 
+import { isDark } from '@/theme';
 import { reportStatusBarStyle } from '@/utils/devicePreview';
 
 /**
@@ -10,14 +11,17 @@ import { reportStatusBarStyle } from '@/utils/devicePreview';
  * Revient au réglage de l'app (icônes foncées) quand on quitte l'écran.
  */
 export function useScreenStatusBar(style: 'light' | 'dark') {
+  // En mode sombre, toute l'application a un fond foncé : les icônes restent claires partout.
+  const wanted = isDark ? 'light' : style;
+  const base = isDark ? 'light' : 'dark';
   useFocusEffect(
     useCallback(() => {
-      setStatusBarStyle(style, true);
-      reportStatusBarStyle(style);
+      setStatusBarStyle(wanted, true);
+      reportStatusBarStyle(wanted);
       return () => {
-        setStatusBarStyle('dark', true);
-        reportStatusBarStyle('dark');
+        setStatusBarStyle(base, true);
+        reportStatusBarStyle(base);
       };
-    }, [style]),
+    }, [wanted, base]),
   );
 }

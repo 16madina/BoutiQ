@@ -5,14 +5,15 @@
     "scheme": "boutiq",
     "version": "0.1.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "backgroundColor": "#FAF6F0",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.boutiq.app",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "BoutiQ utilise vos photos pour rechercher des produits similaires.",
-        "NSCameraUsageDescription": "BoutiQ utilise l'appareil photo pour rechercher des produits similaires."
+        "NSPhotoLibraryUsageDescription": "BoutiQ utilise vos photos pour votre profil, votre boutique, vos produits et la recherche par image.",
+        "NSCameraUsageDescription": "BoutiQ utilise l'appareil photo pour photographier vos produits et rechercher par image.",
+        "NSFaceIDUsageDescription": "BoutiQ utilise Face ID pour déverrouiller l'application à votre place."
       }
     },
     "android": {
@@ -42,9 +43,17 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "BoutiQ utilise vos photos pour rechercher des produits similaires."
+          "photosPermission": "BoutiQ utilise vos photos pour votre profil, votre boutique, vos produits et la recherche par image.",
+          "cameraPermission": "BoutiQ utilise l'appareil photo pour photographier vos produits et rechercher par image."
         }
-      ]
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "BoutiQ utilise Face ID pour déverrouiller l'application à votre place."
+        }
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": false

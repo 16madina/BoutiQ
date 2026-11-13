@@ -46,7 +46,7 @@ export default function IdentityStep() {
         {draft.slug.length > 0 && !editSlug && (
           <Animated.View entering={FadeIn} style={styles.addressRow}>
             {slugCheck.ok ? (
-              <Check size={14} color="#3F6B3A" strokeWidth={2.6} />
+              <Check size={14} color={colors.success} strokeWidth={2.6} />
             ) : (
               <TriangleAlert size={14} color={colors.promo} strokeWidth={2} />
             )}

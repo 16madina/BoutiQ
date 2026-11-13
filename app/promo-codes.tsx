@@ -38,10 +38,10 @@ const SWITCH_COLORS = {
 const number = (text: string) => Number(text.replace(/\D/g, '')) || 0;
 
 function statusOf(p: PromoCode): { label: string; bg: string; fg: string } {
-  if (!p.active) return { label: 'Désactivé', bg: '#ECE7E1', fg: '#5E5650' };
-  if (p.expiresAt && new Date(p.expiresAt).getTime() <= Date.now()) return { label: 'Expiré', bg: '#FCE9E7', fg: colors.promo };
-  if (p.maxUses != null && p.usedCount >= p.maxUses) return { label: 'Épuisé', bg: '#FCE9E7', fg: colors.promo };
-  return { label: 'Actif', bg: '#E7EFDF', fg: '#3F6B3A' };
+  if (!p.active) return { label: 'Désactivé', bg: colors.neutralBg, fg: colors.neutralText };
+  if (p.expiresAt && new Date(p.expiresAt).getTime() <= Date.now()) return { label: 'Expiré', bg: colors.dangerBg, fg: colors.promo };
+  if (p.maxUses != null && p.usedCount >= p.maxUses) return { label: 'Épuisé', bg: colors.dangerBg, fg: colors.promo };
+  return { label: 'Actif', bg: colors.successBg, fg: colors.success };
 }
 
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
@@ -297,7 +297,7 @@ export default function PromoCodesScreen() {
       </StoreSheet>
 
       <StoreSheet visible={!!removing} onClose={() => setRemoving(null)} title={`Supprimer le code ${removing?.code ?? ''} ?`} subtitle="Vos clients ne pourront plus l’utiliser. Les commandes déjà passées ne changent pas.">
-        <SheetAction icon={<Trash2 size={18} color={colors.promo} strokeWidth={2} />} label="Supprimer ce code" tint="#FCE9E7" onPress={remove} />
+        <SheetAction icon={<Trash2 size={18} color={colors.promo} strokeWidth={2} />} label="Supprimer ce code" tint={colors.dangerBg} onPress={remove} />
         <SheetAction icon={<TicketPercent size={18} color={colors.cognac} strokeWidth={2} />} label="Le garder" onPress={() => setRemoving(null)} />
       </StoreSheet>
     </View>
@@ -306,13 +306,13 @@ export default function PromoCodesScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  intro: { fontFamily: fonts.regular, fontSize: 14.5, lineHeight: 21, color: '#4A433E' },
+  intro: { fontFamily: fonts.regular, fontSize: 14.5, lineHeight: 21, color: colors.textSoft },
   error: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.promo },
   empty: { alignItems: 'center', gap: 8, padding: 26, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   emptyIcon: { width: 62, height: 62, borderRadius: 31, backgroundColor: colors.backgroundAlt, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   card: { padding: 14, gap: 8, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  ticket: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radii.sm, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.caramel, backgroundColor: '#FBF1E4' },
+  ticket: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radii.sm, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.caramel, backgroundColor: colors.tintSoft },
   ticketText: { fontFamily: fonts.bold, fontSize: 15.5, letterSpacing: 0.8, color: colors.chocolate },
   badge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: radii.pill },
   badgeText: { fontFamily: fonts.semibold, fontSize: 12 },

@@ -713,8 +713,8 @@ function ResultView({ result, busy, store, onRetry, onAnother }: { result: Resul
   return (
     <View style={[styles.screen, styles.result, { paddingTop: insets.top + 60, paddingBottom: insets.bottom + 24 }]}>
       <Animated.View entering={FadeInDown.duration(380)} style={{ alignItems: 'center', gap: 14 }}>
-        <View style={[styles.resultIcon, { backgroundColor: local ? '#F6E8D6' : '#E7EFDF' }]}>
-          <Icon size={38} color={local ? colors.cognac : '#3F6B3A'} strokeWidth={1.8} />
+        <View style={[styles.resultIcon, { backgroundColor: local ? colors.tint : colors.successBg }]}>
+          <Icon size={38} color={local ? colors.cognac : colors.success} strokeWidth={1.8} />
         </View>
         <Text style={styles.resultTitle}>
           {result.kind === 'published' ? 'Votre produit est en ligne !' : result.kind === 'saved' ? 'C’est enregistré' : 'Gardé sur votre téléphone'}
@@ -767,19 +767,19 @@ const styles = StyleSheet.create({
   close: { fontSize: 17, color: colors.text },
   title: { flex: 1, textAlign: 'center', fontFamily: fonts.bold, fontSize: 19, color: colors.text },
   content: { paddingHorizontal: spacing.screen + 2, paddingTop: 6, gap: 16 },
-  resumed: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: radii.md, backgroundColor: '#F6E8D6' },
+  resumed: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: radii.md, backgroundColor: colors.tint },
   resumedText: { flex: 1, fontFamily: fonts.medium, fontSize: 13.5, color: colors.chocolate },
   link: { fontFamily: fonts.semibold, fontSize: 14, color: colors.cognac },
   step: { gap: 12, padding: 16, borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, ...shadows.soft },
   stepHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  stepNum: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.cognac, alignItems: 'center', justifyContent: 'center' },
+  stepNum: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.accentFill, alignItems: 'center', justifyContent: 'center' },
   stepNumText: { fontFamily: fonts.bold, fontSize: 14, color: colors.white },
   stepTitle: { flex: 1, fontFamily: fonts.bold, fontSize: 17, color: colors.text },
   required: { fontFamily: fonts.medium, fontSize: 12, color: colors.caramel },
   hint: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary, lineHeight: 18 },
   error: { fontFamily: fonts.medium, fontSize: 13, color: colors.promo },
   currency: { fontFamily: fonts.semibold, fontSize: 14, color: colors.textSecondary },
-  assist: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: radii.lg, backgroundColor: '#FBF1E4', borderWidth: 1, borderColor: colors.champagne },
+  assist: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: radii.lg, backgroundColor: colors.tintSoft, borderWidth: 1, borderColor: colors.champagne },
   assistTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.text },
   assistSub: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.textSecondary, lineHeight: 17, marginTop: 1 },
   soon: { fontFamily: fonts.semibold, fontSize: 11.5, color: colors.cognac, backgroundColor: colors.surface, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radii.pill, overflow: 'hidden' },
@@ -799,7 +799,7 @@ const styles = StyleSheet.create({
   foldValue: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
   foldBody: { paddingHorizontal: 16, paddingBottom: 18, paddingTop: 4, gap: 12 },
   pill: { minHeight: 42, paddingHorizontal: 15, borderRadius: radii.pill, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-  discountBox: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: radii.lg, backgroundColor: '#FBF1E4', borderWidth: 1, borderColor: colors.champagne },
+  discountBox: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: radii.lg, backgroundColor: colors.tintSoft, borderWidth: 1, borderColor: colors.champagne },
   discountOld: { fontFamily: fonts.regular, fontSize: 13.5, color: colors.textSecondary, textDecorationLine: 'line-through' },
   discountNew: { fontFamily: fonts.bold, fontSize: 20, color: colors.text, letterSpacing: -0.3 },
   detailTitle: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text },
@@ -830,7 +830,7 @@ const styles = StyleSheet.create({
   result: { justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.screen + 4 },
   resultIcon: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center' },
   resultTitle: { fontFamily: fonts.bold, fontSize: 26, color: colors.text, textAlign: 'center', letterSpacing: -0.4 },
-  resultText: { fontFamily: fonts.regular, fontSize: 15.5, lineHeight: 22, color: '#4A433E', textAlign: 'center', paddingHorizontal: 8 },
+  resultText: { fontFamily: fonts.regular, fontSize: 15.5, lineHeight: 22, color: colors.textSoft, textAlign: 'center', paddingHorizontal: 8 },
   resultLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, height: 54, borderRadius: radii.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   resultLinkText: { fontFamily: fonts.semibold, fontSize: 15.5, color: colors.text },
 });

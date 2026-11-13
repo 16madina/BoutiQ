@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   spotCtaText: { fontFamily: fonts.semibold, fontSize: 13 },
   aboutWrap: {},
   about: { marginHorizontal: spacing.screen, padding: 16, gap: 14, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  aboutText: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: '#3A3430' },
+  aboutText: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22, color: colors.textBody },
   aboutRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   aboutRowText: { flex: 1, fontFamily: fonts.medium, fontSize: 13.5, color: colors.text },
   aboutContact: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: radii.pill, borderWidth: 1.2 },

@@ -2,7 +2,7 @@ import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors } from '@/theme';
+import { colors, isDark } from '@/theme';
 
 const LIQUID_GLASS = Platform.OS === 'ios' && isLiquidGlassAvailable();
 
@@ -20,8 +20,8 @@ export function GlassSurface({ style, borderRadius }: { style?: StyleProp<ViewSt
       <GlassView
         style={shape}
         glassEffectStyle="regular"
-        colorScheme="light"
-        tintColor="rgba(250,246,240,0.55)"
+        colorScheme={isDark ? 'dark' : 'light'}
+        tintColor={colors.glassTint}
       />
     );
   }
@@ -32,7 +32,7 @@ export function GlassSurface({ style, borderRadius }: { style?: StyleProp<ViewSt
 
   return (
     <View style={shape}>
-      <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
+      <BlurView intensity={60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
       <View style={[StyleSheet.absoluteFill, styles.veil]} />
     </View>
   );
@@ -41,11 +41,11 @@ export function GlassSurface({ style, borderRadius }: { style?: StyleProp<ViewSt
 export const isLiquidGlass = LIQUID_GLASS;
 
 const styles = StyleSheet.create({
-  androidFill: { backgroundColor: 'rgba(255,252,248,0.97)' },
-  veil: { backgroundColor: 'rgba(250,246,240,0.72)' },
+  androidFill: { backgroundColor: colors.glassFill },
+  veil: { backgroundColor: colors.glassVeil },
 });
 
 export const glassBorder = {
   borderWidth: StyleSheet.hairlineWidth,
-  borderColor: LIQUID_GLASS ? 'rgba(255,255,255,0.6)' : colors.border,
+  borderColor: LIQUID_GLASS && !isDark ? 'rgba(255,255,255,0.6)' : colors.border,
 };

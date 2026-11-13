@@ -551,6 +551,6 @@ const styles = StyleSheet.create({
   followText: { fontFamily: fonts.bold, fontSize: 14 },
   share: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
 
-  pending: { backgroundColor: '#F6E8D6', paddingVertical: 9, paddingHorizontal: spacing.screen },
+  pending: { backgroundColor: colors.tint, paddingVertical: 9, paddingHorizontal: spacing.screen },
   pendingText: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.chocolate, textAlign: 'center' },
 });

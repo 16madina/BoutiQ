@@ -111,7 +111,7 @@ export default function StoreCreated() {
                     {store.name}
                   </Text>
                   <View style={styles.activePill}>
-                    <CircleCheck size={15} color="#3F6B3A" strokeWidth={2} />
+                    <CircleCheck size={15} color={colors.success} strokeWidth={2} />
                     <Text style={styles.activeText}>Boutique active</Text>
                   </View>
                 </View>
@@ -156,18 +156,18 @@ const styles = StyleSheet.create({
   confetti: { position: 'absolute', width: 15, height: 6, borderRadius: 3 },
   check: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.caramel, alignItems: 'center', justifyContent: 'center', ...shadows.card },
   title: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 38, letterSpacing: -0.6, color: colors.text, textAlign: 'center', marginTop: spacing.xxl },
-  subtitle: { fontFamily: fonts.regular, fontSize: 15.5, color: '#4A433E', textAlign: 'center', marginTop: 12, lineHeight: 23 },
+  subtitle: { fontFamily: fonts.regular, fontSize: 15.5, color: colors.textSoft, textAlign: 'center', marginTop: 12, lineHeight: 23 },
   card: { marginTop: spacing.xxl, borderRadius: radii.xl, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, ...shadows.card },
   cardBanner: { height: 120, width: '100%' },
   cardBody: { paddingHorizontal: 18, paddingBottom: 16 },
   cardLogo: { marginTop: -56, alignSelf: 'flex-start', borderRadius: 50, borderWidth: 4, borderColor: colors.surface, overflow: 'hidden' },
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
   cardName: { fontFamily: fonts.bold, fontSize: 22, color: colors.text, letterSpacing: -0.3 },
-  activePill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.pill, backgroundColor: '#E7EFDF', borderWidth: 1, borderColor: '#B9CFA9' },
-  activeText: { fontFamily: fonts.semibold, fontSize: 13, color: '#3F6B3A' },
+  activePill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.pill, backgroundColor: colors.successBg, borderWidth: 1, borderColor: '#B9CFA9' },
+  activeText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.success },
   action: { flexDirection: 'row', alignItems: 'center', gap: 16, height: 58, paddingHorizontal: 22, borderRadius: radii.lg, overflow: 'hidden' },
   actionPrimary: { backgroundColor: colors.caramel, ...shadows.button },
-  actionSecondary: { backgroundColor: '#FBF1E4', borderWidth: 1, borderColor: colors.champagne },
+  actionSecondary: { backgroundColor: colors.tintSoft, borderWidth: 1, borderColor: colors.champagne },
   actionText: { fontFamily: fonts.semibold, fontSize: 16, color: colors.text },
   share: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10 },
   shareText: { fontFamily: fonts.medium, fontSize: 14.5, color: colors.cognac },

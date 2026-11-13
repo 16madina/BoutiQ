@@ -10,6 +10,7 @@ import { removeImages, uploadImage } from '@/lib/media';
 import { currentUser, ensureSession } from '@/lib/session';
 import { storeMediaUrl, supabase } from '@/lib/supabase';
 import { useProfile, type Profile } from '@/store/useProfile';
+import { colors } from '@/theme';
 import type { CartLine } from '@/store/useShop';
 import type { Database } from '@/types/database';
 import type { LocalImage } from '@/types/seller';
@@ -27,11 +28,11 @@ export const MOBILE_MONEY: { id: MobileMoney; label: string; color: string }[] =
 ];
 
 export const ORDER_STATUS: Record<OrderStatus, { label: string; bg: string; fg: string }> = {
-  pending: { label: 'En attente', bg: '#F6E8D6', fg: '#8A542C' },
+  pending: { label: 'En attente', bg: colors.tint, fg: colors.cognac },
   confirmed: { label: 'Confirmée', bg: '#E6EEF8', fg: '#1F5FA8' },
   shipped: { label: 'En route', bg: '#EDE7F8', fg: '#5B3FA8' },
-  delivered: { label: 'Reçue', bg: '#E7EFDF', fg: '#3F6B3A' },
-  cancelled: { label: 'Annulée', bg: '#ECE7E1', fg: '#5E5650' },
+  delivered: { label: 'Reçue', bg: colors.successBg, fg: colors.success },
+  cancelled: { label: 'Annulée', bg: colors.neutralBg, fg: colors.neutralText },
 };
 
 const ok = <T>(res: { data: T; error: unknown }): T => {

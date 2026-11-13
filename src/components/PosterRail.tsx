@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   gridHead: { minHeight: 64, marginBottom: 10 },
   gridTitle: { fontSize: 22, lineHeight: 25, marginTop: 2 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  tile: { borderRadius: radii.sm, overflow: 'hidden', backgroundColor: colors.white },
+  tile: { borderRadius: radii.sm, overflow: 'hidden', backgroundColor: colors.field },
   tileBadge: { position: 'absolute', left: 6, bottom: 6, backgroundColor: colors.promo, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
   tileBadgeText: { fontFamily: fonts.bold, fontSize: 11.5, color: colors.white },
   more: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 'auto', alignSelf: 'flex-start' },

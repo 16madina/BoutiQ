@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radii.xl,
     overflow: 'hidden',
-    backgroundColor: colors.cognac,
+    backgroundColor: colors.accentFill,
     ...shadows.card,
   },
   content: { flex: 1, justifyContent: 'center', paddingHorizontal: 22, maxWidth: '78%' },
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: radii.pill,
   },
-  ctaText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.chocolate },
+  ctaText: { fontFamily: fonts.semibold, fontSize: 15, color: '#58351F' },
   dots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 7, marginTop: 12, height: 10 },
   dot: { borderRadius: 5 },
 });

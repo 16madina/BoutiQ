@@ -59,7 +59,7 @@ export default function OpenStoreIntro() {
             transition={300}
           />
           <LinearGradient
-            colors={[colors.background, 'rgba(250,246,240,0)', 'rgba(250,246,240,0)', 'rgba(250,246,240,0.85)', colors.background]}
+            colors={[colors.background, colors.backgroundClear, colors.backgroundClear, colors.backgroundVeil, colors.background]}
             locations={[0, 0.14, 0.55, 0.88, 1]}
             style={StyleSheet.absoluteFill}
           />
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   back: { marginLeft: spacing.screen + 4, alignSelf: 'flex-start', paddingVertical: 8 },
   titles: { alignItems: 'center', paddingHorizontal: spacing.xl, marginTop: spacing.lg },
   title: { fontFamily: fonts.bold, fontSize: 30, color: colors.text, letterSpacing: -0.6, textAlign: 'center' },
-  subtitle: { fontFamily: fonts.regular, fontSize: 15.5, color: '#4A433E', textAlign: 'center', marginTop: 10, lineHeight: 22 },
+  subtitle: { fontFamily: fonts.regular, fontSize: 15.5, color: colors.textSoft, textAlign: 'center', marginTop: 10, lineHeight: 22 },
   hero: { marginTop: spacing.xl, overflow: 'hidden' },
   benefits: {
     marginHorizontal: spacing.screen,

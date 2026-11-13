@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   dark: { backgroundColor: colors.buttonPrimary },
-  light: { backgroundColor: '#F6E8D6', borderWidth: 1, borderColor: colors.champagne },
+  light: { backgroundColor: colors.tint, borderWidth: 1, borderColor: colors.champagne },
   caramel: { backgroundColor: colors.caramel },
   label: { color: colors.white, fontFamily: fonts.semibold, fontSize: 16 },
   trailing: { position: 'absolute', right: 22 },

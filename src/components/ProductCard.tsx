@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   image: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#F1E6D8',
+    backgroundColor: colors.placeholder,
     borderRadius: radii.lg,
   },
   favorite: { position: 'absolute', top: 10, right: 10 },

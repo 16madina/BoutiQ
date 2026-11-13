@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: spacing.screen, marginBottom: spacing.md },
   action: { fontFamily: fonts.semibold, fontSize: 14, color: colors.caramel },
   card: { width: CARD, borderRadius: radii.md, backgroundColor: colors.surface, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  imageWrap: { width: CARD, height: CARD, backgroundColor: '#F1E6D8' },
+  imageWrap: { width: CARD, height: CARD, backgroundColor: colors.placeholder },
   badge: { position: 'absolute', left: 8, top: 8, backgroundColor: colors.promo, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
   badgeText: { fontFamily: fonts.bold, fontSize: 11, color: colors.white },
   favorite: { position: 'absolute', right: 8, top: 8 },

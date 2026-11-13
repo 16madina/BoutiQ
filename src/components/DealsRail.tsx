@@ -83,7 +83,7 @@ export function DealsRail() {
 const styles = StyleSheet.create({
   band: { backgroundColor: colors.backgroundAlt, paddingTop: spacing.lg, paddingBottom: spacing.lg },
   card: { width: CARD, borderRadius: radii.md, backgroundColor: colors.surface, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  imageWrap: { width: CARD, height: CARD, backgroundColor: colors.white },
+  imageWrap: { width: CARD, height: CARD, backgroundColor: colors.field },
   body: { padding: 10, gap: 4 },
   name: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.text },
   badge: { alignSelf: 'flex-start', backgroundColor: colors.promo, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },

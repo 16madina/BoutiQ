@@ -4,6 +4,7 @@
  */
 import type { CategoryId } from '@/types';
 import type { StorefrontPalette, StorefrontTemplate, StorefrontTemplateId } from '@/types/storefront';
+import { isDark } from '@/theme';
 
 /** Couleurs de l'identité BoutiQ, proposées dans tous les modèles. */
 const BRAND_ACCENTS = ['#B87A3D', '#8A542C', '#58351F', '#191919'];
@@ -266,21 +267,27 @@ function contrast(a: [number, number, number], b: [number, number, number]) {
 const IVORY: [number, number, number] = [250, 246, 240];
 const WHITE: [number, number, number] = [255, 255, 255];
 const INK: [number, number, number] = [25, 25, 25];
+/** Fond de l'application en mode sombre. */
+const NIGHT: [number, number, number] = [42, 31, 24];
 
 /**
  * Palette d'une boutique à partir de sa couleur.
  * Garantit des textes lisibles (contraste ≥ 4,5:1) quelle que soit la couleur choisie.
  */
 export function buildPalette(accentHex: string, fallback = '#B87A3D'): StorefrontPalette {
-  const accent = parseHex(accentHex) ?? parseHex(fallback)!;
+  let accent = parseHex(accentHex) ?? parseHex(fallback)!;
+  // Mode sombre : une couleur très foncée (noir, chocolat) ne se verrait plus. On l'éclaircit
+  // juste assez, et les teintes dérivées sont calculées pour un fond foncé.
+  if (isDark) for (let i = 0; i < 12 && contrast(accent, NIGHT) < 3; i++) accent = mix(accent, IVORY, 0.14);
+  const surface = isDark ? NIGHT : IVORY;
   const onAccent = contrast(accent, WHITE) >= 4.5 ? '#FFFFFF' : contrast(accent, WHITE) >= 3 && luminance(accent) < 0.3 ? '#FFFFFF' : '#191919';
   let ink = accent;
-  for (let i = 0; i < 10 && contrast(ink, IVORY) < 4.5; i++) ink = mix(ink, INK, 0.18);
+  for (let i = 0; i < 10 && contrast(ink, surface) < 4.5; i++) ink = mix(ink, isDark ? IVORY : INK, 0.18);
   return {
     accent: toHex(accent),
     onAccent,
     // Teinte claire assez marquée pour que la couleur de la boutique se voie bien.
-    accentSoft: toHex(mix(accent, IVORY, 0.8)),
+    accentSoft: toHex(mix(accent, surface, isDark ? 0.84 : 0.8)),
     accentInk: toHex(ink),
   };
 }

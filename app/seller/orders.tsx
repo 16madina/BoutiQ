@@ -128,12 +128,12 @@ export default function SellerOrders() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  earned: { marginHorizontal: spacing.screen, marginBottom: 12, padding: 14, borderRadius: radii.lg, backgroundColor: '#E7EFDF' },
-  earnedLabel: { fontFamily: fonts.medium, fontSize: 13, color: '#2F5A2B' },
-  earnedValue: { fontFamily: fonts.bold, fontSize: 22, color: '#2F5A2B', marginTop: 2 },
+  earned: { marginHorizontal: spacing.screen, marginBottom: 12, padding: 14, borderRadius: radii.lg, backgroundColor: colors.successBg },
+  earnedLabel: { fontFamily: fonts.medium, fontSize: 13, color: colors.successText },
+  earnedValue: { fontFamily: fonts.bold, fontSize: 22, color: colors.successText, marginTop: 2 },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: spacing.screen, marginBottom: 12 },
   filter: { paddingHorizontal: 14, height: 38, borderRadius: radii.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, justifyContent: 'center' },
   filterActive: { backgroundColor: colors.buttonPrimary, borderColor: colors.buttonPrimary },
   filterText: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.text },
-  error: { marginHorizontal: spacing.screen, marginBottom: 10, padding: 12, borderRadius: radii.md, backgroundColor: '#F6E8D6', fontFamily: fonts.medium, fontSize: 13.5, color: colors.chocolate },
+  error: { marginHorizontal: spacing.screen, marginBottom: 10, padding: 12, borderRadius: radii.md, backgroundColor: colors.tint, fontFamily: fonts.medium, fontSize: 13.5, color: colors.chocolate },
 });

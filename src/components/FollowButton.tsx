@@ -42,6 +42,6 @@ const styles = StyleSheet.create({
   },
   compact: { height: 34, paddingHorizontal: 14 },
   follow: { backgroundColor: colors.caramel },
-  following: { backgroundColor: '#F6E8D6', borderWidth: 1, borderColor: colors.champagne },
+  following: { backgroundColor: colors.tint, borderWidth: 1, borderColor: colors.champagne },
   label: { fontFamily: fonts.semibold, fontSize: 14, color: colors.white },
 });
