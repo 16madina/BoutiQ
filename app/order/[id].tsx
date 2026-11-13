@@ -146,7 +146,7 @@ export default function OrderScreen() {
                 <Text style={typography.productName} numberOfLines={2}>
                   {i.name}
                 </Text>
-                {i.variant || i.size ? <Text style={typography.caption}>{[i.variant, i.size ? `Taille ${i.size}` : null].filter(Boolean).join(' · ')}</Text> : null}
+                {i.variant || i.size || i.color ? <Text style={typography.caption}>{[i.variant, i.color, i.size ? `Taille ${i.size}` : null].filter(Boolean).join(' · ')}</Text> : null}
                 <Text style={typography.caption}>
                   {i.quantity} × {formatFCFA(i.unitPrice)}
                 </Text>

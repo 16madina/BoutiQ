@@ -53,7 +53,7 @@ function ProductCardBase({ product, width }: Props) {
               <AddToCartButton
                 productId={product.id}
                 onChoose={
-                  product.sizes?.length || product.variants?.length
+                  product.sizes?.length || product.variants?.length || (product.colors?.length ?? 0) > 1
                     ? () => router.push({ pathname: '/product/[id]', params: { id: product.id } })
                     : undefined
                 }

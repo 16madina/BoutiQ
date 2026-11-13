@@ -113,6 +113,7 @@ export interface OrderItem {
   unitPrice: number;
   variant?: string;
   size?: string;
+  color?: string;
   imageUri?: string;
 }
 
@@ -172,6 +173,7 @@ function toOrder(r: OrderRow, userId: string, storeOwnerOf: Set<string>): Order 
       unitPrice: i.unit_price,
       variant: i.variant ?? undefined,
       size: i.size ?? undefined,
+      color: i.color ?? undefined,
       imageUri: storeMediaUrl(i.image_path),
     })),
     createdAt: r.created_at,
@@ -290,7 +292,7 @@ export async function placeOrders(
     if (g.state !== 'orderable' || !g.remoteId) continue;
     const { data, error } = await supabase.rpc('place_order', {
       p_store_id: g.remoteId,
-      p_items: g.lines.map((l) => ({ product_id: l.productId, quantity: l.quantity, size: l.size ?? null, variant: l.variant ?? null })),
+      p_items: g.lines.map((l) => ({ product_id: l.productId, quantity: l.quantity, size: l.size ?? null, variant: l.variant ?? null, color: l.color ?? null })),
       p_delivery: delivery as unknown as Database['public']['Functions']['place_order']['Args']['p_delivery'],
       p_payment: payment,
       p_provider: provider,

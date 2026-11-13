@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useRef, useState, type ComponentRef, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
 import { colors, fonts, radii, spacing } from '@/theme';
 
@@ -59,6 +60,17 @@ export function ProductGallery({ images, width, height, placeholder, children }:
           ))}
         </ScrollView>
         {children}
+        {/* À la souris, on ne peut pas glisser : deux flèches font défiler les photos. */}
+        {many && Platform.OS === 'web' && index > 0 && (
+          <Pressable onPress={() => goTo(index - 1)} accessibilityRole="button" accessibilityLabel="Photo précédente" style={[styles.arrow, { left: 10, top: height / 2 - 19 }]}>
+            <ChevronLeft size={20} strokeWidth={2} color={colors.text} />
+          </Pressable>
+        )}
+        {many && Platform.OS === 'web' && index < images.length - 1 && (
+          <Pressable onPress={() => goTo(index + 1)} accessibilityRole="button" accessibilityLabel="Photo suivante" style={[styles.arrow, { right: 10, top: height / 2 - 19 }]}>
+            <ChevronRight size={20} strokeWidth={2} color={colors.text} />
+          </Pressable>
+        )}
         {many && (
           <View style={styles.counter} pointerEvents="none">
             <Text style={styles.counterText}>
@@ -97,6 +109,7 @@ export function ProductGallery({ images, width, height, placeholder, children }:
 const styles = StyleSheet.create({
   counter: { position: 'absolute', right: 12, bottom: 12, backgroundColor: 'rgba(25,25,25,0.62)', borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 4 },
   counterText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.white },
+  arrow: { position: 'absolute', width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.overlayLight },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingTop: 10 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.sand, opacity: 0.6 },
   dotActive: { backgroundColor: colors.caramel, opacity: 1, width: 18 },

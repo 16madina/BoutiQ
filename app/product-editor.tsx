@@ -1,6 +1,26 @@
 import { randomUUID } from 'expo-crypto';
 import { router, useLocalSearchParams } from 'expo-router';
-import { CircleCheck, ChevronDown, Eye, Package, RotateCcw, Sparkles, Store as StoreIcon, Trash2, TriangleAlert, WifiOff } from 'lucide-react-native';
+import {
+  AlignLeft,
+  Boxes,
+  CircleCheck,
+  ChevronDown,
+  Eye,
+  Layers,
+  LayoutList,
+  Package,
+  Palette,
+  Percent,
+  RotateCcw,
+  Ruler,
+  Sparkles,
+  Store as StoreIcon,
+  Trash2,
+  TriangleAlert,
+  Truck,
+  WifiOff,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -23,7 +43,7 @@ import { useSeller } from '@/store/useSeller';
 import { colors, fonts, radii, shadows, spacing } from '@/theme';
 import type { CategoryId } from '@/types';
 import type { ProductForm, ProductStatus, SellerStore } from '@/types/seller';
-import { discountPercent } from '@/utils/format';
+import { discountPercent, formatFCFA } from '@/utils/format';
 import { haptics } from '@/utils/haptics';
 import { currencyLabel, groupDigits, missingSummary, suggestCategory, toNumber, validateProduct } from '@/utils/productForm';
 import { categoryIcon } from '@/utils/storeDefaults';
@@ -41,6 +61,18 @@ const emptyForm = (store: SellerStore): ProductForm => ({
   colors: [],
   variants: [],
 });
+
+/** Rabais proposés d'un toucher. */
+const DISCOUNTS = [5, 10, 15, 20, 25, 30, 40, 50];
+
+/** Prix après rabais, arrondi à 5 près (pas de petite monnaie). */
+function discounted(base: number, pct: number): number {
+  const raw = (base * (100 - pct)) / 100;
+  return base >= 100 ? Math.round(raw / 5) * 5 : Math.round(raw);
+}
+
+/** Rubriques de la fiche qui s'ouvrent et se referment. */
+type SectionId = 'discount' | 'stock' | 'sizes' | 'colors' | 'variants' | 'description' | 'collection' | 'delivery';
 
 const hasContent = (f: ProductForm) => f.photos.length > 0 || f.name.trim().length > 0 || f.price > 0;
 
@@ -72,9 +104,10 @@ function ProductEditor({ store }: { store: SellerStore }) {
   });
   const [resumed, setResumed] = useState(() => isNew && !!useSeller.getState().productDraft && hasContent(useSeller.getState().productDraft!));
   const [categoryTouched, setCategoryTouched] = useState(!isNew || form.categoryId !== store.categoryId);
-  const [moreOpen, setMoreOpen] = useState(
-    () => !!(existing && (existing.description || existing.sizes?.length || existing.colors?.length || existing.variants?.length || existing.oldPrice || existing.deliveryNote)),
-  );
+  // Rubriques ouvertes (rabais, quantité, tailles, couleurs…) et rabais choisi en %.
+  const [open, setOpen] = useState<Partial<Record<SectionId, boolean>>>({});
+  const [pct, setPct] = useState(() => discountPercent(form.price, form.oldPrice || undefined) ?? 0);
+  const [customPct, setCustomPct] = useState('');
   const [showErrors, setShowErrors] = useState(false);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -89,7 +122,23 @@ function ProductEditor({ store }: { store: SellerStore }) {
   const errors = useMemo(() => validateProduct(form), [form]);
   const valid = Object.keys(errors).length === 0;
   const err = (k: keyof typeof errors) => (showErrors ? errors[k] : null);
-  const percent = discountPercent(form.price, form.oldPrice || undefined);
+  // Prix normal (avant rabais) : c'est lui que le vendeur saisit ; le prix réduit est calculé.
+  const basePrice = pct > 0 && form.oldPrice && form.oldPrice > form.price ? form.oldPrice : form.price;
+  const toggle = (id: SectionId) => {
+    haptics.selection();
+    setOpen((o) => ({ ...o, [id]: !o[id] }));
+  };
+  const applyDiscount = (next: number, base = basePrice) => {
+    const value = Math.min(Math.max(Math.round(next), 0), 90);
+    const reduced = value > 0 && base > 0 ? discounted(base, value) : base;
+    if (value === 0 || reduced <= 0 || reduced >= base) {
+      setPct(value > 0 && base === 0 ? value : 0);
+      set({ price: base, oldPrice: undefined });
+      return;
+    }
+    setPct(value);
+    set({ price: reduced, oldPrice: base });
+  };
   const collectionName = store.collections.find((c) => c.id === form.collectionId)?.name;
   const hasVariants = (form.variants?.length ?? 0) > 0;
   const variantStock = form.variants?.reduce((n, v) => n + v.stock, 0) ?? 0;
@@ -188,7 +237,9 @@ function ProductEditor({ store }: { store: SellerStore }) {
           setForm(emptyForm(store));
           setCategoryTouched(false);
           setShowErrors(false);
-          setMoreOpen(false);
+          setOpen({});
+          setPct(0);
+          setCustomPct('');
           setAssist(null);
           setResult(null);
           if (id) router.setParams({ id: undefined });
@@ -250,7 +301,12 @@ function ProductEditor({ store }: { store: SellerStore }) {
               suggestion={assist.suggestion}
               onUse={(patch) => {
                 if (patch.categoryId) setCategoryTouched(true);
-                set(patch);
+                // Un prix proposé est un prix normal : le rabais choisi s'y applique.
+                if (patch.price != null && pct > 0) {
+                  const { price, ...rest } = patch;
+                  set(rest);
+                  applyDiscount(pct, price);
+                } else set(patch);
               }}
               onClose={() => setAssist(null)}
             />
@@ -261,15 +317,21 @@ function ProductEditor({ store }: { store: SellerStore }) {
         <Step n={2} title="Nom et prix" required>
           <FormField label="Nom du produit" required value={form.name} onChangeText={(name) => set({ name })} placeholder="Ex. Robe wax longue" maxLength={60} error={err('name')} />
           <FormField
-            label="Prix"
+            label={pct > 0 ? 'Prix normal (avant rabais)' : 'Prix'}
             required
-            value={groupDigits(form.price)}
-            onChangeText={(t) => set({ price: toNumber(t) })}
+            value={groupDigits(basePrice)}
+            onChangeText={(t) => applyDiscount(pct, toNumber(t))}
             keyboardType="number-pad"
             placeholder="0"
             suffix={<Text style={styles.currency}>{currency}</Text>}
             error={err('price')}
-            hint={hasVariants ? 'Prix affiché par défaut ; chaque variante peut avoir le sien.' : undefined}
+            hint={
+              pct > 0 && form.oldPrice
+                ? `Avec le rabais de ${pct} %, vos clients paient ${groupDigits(form.price)} ${currency}.`
+                : hasVariants
+                  ? 'Prix affiché par défaut ; chaque variante peut avoir le sien.'
+                  : undefined
+            }
           />
         </Step>
 
@@ -300,114 +362,160 @@ function ProductEditor({ store }: { store: SellerStore }) {
           </View>
         </Step>
 
-        {/* Plus de détails */}
+        {/* Détails : chaque rubrique s'ouvre d'un toucher */}
         <View style={styles.more}>
-          <Pressable
-            onPress={() => {
-              haptics.selection();
-              setMoreOpen((o) => !o);
-            }}
-            style={styles.moreHeader}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: moreOpen }}
+          <View style={styles.moreHeader}>
+            <Text style={styles.moreTitle}>Détails du produit</Text>
+            <Text style={styles.hint}>Facultatif. Touchez une ligne pour l’ouvrir.</Text>
+          </View>
+
+          <Fold
+            icon={Percent}
+            title="Rabais"
+            value={pct > 0 && form.oldPrice ? `−${pct} % · ${groupDigits(form.price)} ${currency}` : 'Aucun'}
+            highlight={pct > 0 && !!form.oldPrice}
+            open={!!open.discount}
+            onToggle={() => toggle('discount')}
           >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.moreTitle}>Plus de détails</Text>
-              <Text style={styles.hint}>Facultatif : description, quantité, tailles, couleurs, variantes, promotion, collection, livraison.</Text>
+            <Text style={styles.hint}>Choisissez un pourcentage : le nouveau prix est calculé tout seul.</Text>
+            <View style={styles.categories}>
+              <Pill label="Aucun" active={pct === 0} onPress={() => applyDiscount(0)} />
+              {DISCOUNTS.map((n) => (
+                <Pill key={n} label={`${n} %`} active={pct === n} onPress={() => applyDiscount(n)} />
+              ))}
             </View>
-            <ChevronDown size={22} color={colors.text} strokeWidth={1.8} style={{ transform: [{ rotate: moreOpen ? '180deg' : '0deg' }] }} />
-          </Pressable>
-
-          {moreOpen && (
-            <Animated.View entering={FadeInDown.duration(250)} style={styles.moreBody}>
-              <FormField
-                label="Description"
-                optional
-                value={form.description}
-                onChangeText={(t) => set({ description: t.slice(0, 600) })}
-                placeholder="Matière, dimensions, conseils d’utilisation…"
-                multiline
-              />
-
-              <Detail title="Quantité disponible" hint={hasVariants ? `Calculée à partir des variantes : ${variantStock}` : form.stock === 0 ? 'Le produit sera affiché « Épuisé ».' : undefined}>
-                <View style={styles.stockRow}>
-                  <StockStepper value={hasVariants ? variantStock : form.stock} onChange={(stock) => set({ stock })} disabled={hasVariants} />
-                  {!hasVariants && (
-                    <Pressable
-                      onPress={() => {
-                        haptics.selection();
-                        set({ stock: form.stock === 0 ? 1 : 0 });
-                      }}
-                      style={[styles.soldOutBtn, form.stock === 0 && styles.soldOutOn]}
-                      accessibilityRole="switch"
-                      accessibilityState={{ checked: form.stock === 0 }}
-                    >
-                      <Text style={[styles.soldOutText, form.stock === 0 && { color: colors.white }]}>Épuisé</Text>
-                    </Pressable>
-                  )}
+            <FormField
+              label="Autre pourcentage"
+              optional
+              value={customPct}
+              onChangeText={(t) => {
+                const digits = t.replace(/\D/g, '').slice(0, 2);
+                setCustomPct(digits);
+                if (digits) applyDiscount(Number(digits));
+              }}
+              keyboardType="number-pad"
+              placeholder="Ex. 35"
+              suffix={<Text style={styles.currency}>%</Text>}
+            />
+            {basePrice <= 0 ? (
+              <Text style={styles.hint}>Indiquez d’abord le prix du produit, plus haut.</Text>
+            ) : pct > 0 && form.oldPrice ? (
+              <View style={styles.discountBox}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={styles.discountOld}>{formatFCFA(form.oldPrice).replace('FCFA', currency)}</Text>
+                  <Text style={styles.discountNew}>{formatFCFA(form.price).replace('FCFA', currency)}</Text>
+                  <Text style={styles.hint}>Votre client économise {groupDigits(form.oldPrice - form.price)} {currency}.</Text>
                 </View>
-              </Detail>
+                <DiscountBadge percent={pct} size="md" />
+              </View>
+            ) : null}
+            {hasVariants && pct > 0 ? <Text style={styles.hint}>Le rabais s’applique au prix principal. Les variantes gardent leur propre prix.</Text> : null}
+          </Fold>
 
-              <Detail title="Tailles" hint="Les clients choisiront leur taille.">
-                <SizesField value={form.sizes ?? []} onChange={(sizes) => set({ sizes })} />
-              </Detail>
-
-              <Detail title="Couleurs">
-                <ColorsField value={form.colors ?? []} onChange={(colors) => set({ colors })} />
-              </Detail>
-
-              <Detail title="Variantes et prix" hint="Si le prix ou le stock change selon la taille, la couleur ou le format.">
-                <VariantsField
-                  value={form.variants ?? []}
-                  onChange={(variants) => set({ variants })}
-                  basePrice={form.price}
-                  sizes={form.sizes ?? []}
-                  colorsList={form.colors ?? []}
-                  currency={currency}
-                  error={err('variants')}
-                />
-              </Detail>
-
-              <Detail title="Ancien prix (promotion)">
-                <FormField
-                  label="Ancien prix"
-                  optional
-                  value={groupDigits(form.oldPrice ?? 0)}
-                  onChangeText={(t) => set({ oldPrice: toNumber(t) || undefined })}
-                  keyboardType="number-pad"
-                  placeholder="Ex. 25 000"
-                  suffix={<Text style={styles.currency}>{currency}</Text>}
-                  error={err('oldPrice')}
-                  hint="Le prix d’avant, barré à côté du nouveau prix."
-                />
-                {percent != null && (
-                  <View style={styles.promoRow}>
-                    <DiscountBadge percent={percent} size="md" />
-                    <Text style={styles.hint}>Affiché sur votre produit</Text>
-                  </View>
-                )}
-              </Detail>
-
-              {store.collections.length > 0 && (
-                <SelectField
-                  label="Collection"
-                  optional
-                  value={collectionName}
-                  placeholder="Aucune"
-                  onPress={() => openPicker('collection', collectionName, store.collections.map((c) => c.name))}
-                />
+          <Fold
+            icon={Boxes}
+            title="Quantité disponible"
+            value={(hasVariants ? variantStock : form.stock) === 0 ? 'Épuisé' : `${hasVariants ? variantStock : form.stock} en stock`}
+            open={!!open.stock}
+            onToggle={() => toggle('stock')}
+          >
+            {hasVariants ? <Text style={styles.hint}>Calculée à partir des variantes : {variantStock}</Text> : form.stock === 0 ? <Text style={styles.hint}>Le produit sera affiché « Épuisé ».</Text> : null}
+            <View style={styles.stockRow}>
+              <StockStepper value={hasVariants ? variantStock : form.stock} onChange={(stock) => set({ stock })} disabled={hasVariants} />
+              {!hasVariants && (
+                <Pressable
+                  onPress={() => {
+                    haptics.selection();
+                    set({ stock: form.stock === 0 ? 1 : 0 });
+                  }}
+                  style={[styles.soldOutBtn, form.stock === 0 && styles.soldOutOn]}
+                  accessibilityRole="switch"
+                  accessibilityState={{ checked: form.stock === 0 }}
+                >
+                  <Text style={[styles.soldOutText, form.stock === 0 && { color: colors.white }]}>Épuisé</Text>
+                </Pressable>
               )}
+            </View>
+          </Fold>
 
-              <FormField
-                label="Livraison de ce produit"
+          <Fold icon={Ruler} title="Tailles" value={form.sizes?.length ? form.sizes.join(', ') : 'Aucune'} highlight={!!form.sizes?.length} open={!!open.sizes} onToggle={() => toggle('sizes')}>
+            <Text style={styles.hint}>Touchez les tailles disponibles. Vos clients choisiront la leur.</Text>
+            <SizesField value={form.sizes ?? []} onChange={(sizes) => set({ sizes })} />
+          </Fold>
+
+          <Fold icon={Palette} title="Couleurs" value={form.colors?.length ? form.colors.join(', ') : 'Aucune'} highlight={!!form.colors?.length} open={!!open.colors} onToggle={() => toggle('colors')}>
+            <Text style={styles.hint}>Touchez les couleurs disponibles.</Text>
+            <ColorsField value={form.colors ?? []} onChange={(colors) => set({ colors })} />
+          </Fold>
+
+          <Fold
+            icon={Layers}
+            title="Variantes et prix"
+            value={hasVariants ? `${form.variants!.length} variante${form.variants!.length > 1 ? 's' : ''}` : 'Aucune'}
+            highlight={hasVariants}
+            open={!!open.variants || (showErrors && !!errors.variants)}
+            onToggle={() => toggle('variants')}
+          >
+            <Text style={styles.hint}>Si le prix ou le stock change selon la taille, la couleur ou le format.</Text>
+            <VariantsField
+              value={form.variants ?? []}
+              onChange={(variants) => set({ variants })}
+              basePrice={form.price}
+              sizes={form.sizes ?? []}
+              colorsList={form.colors ?? []}
+              currency={currency}
+              error={err('variants')}
+            />
+          </Fold>
+
+          <Fold
+            icon={AlignLeft}
+            title="Description"
+            value={form.description.trim() ? form.description.trim() : 'Aucune'}
+            highlight={!!form.description.trim()}
+            open={!!open.description}
+            onToggle={() => toggle('description')}
+          >
+            <FormField
+              label="Description"
+              optional
+              value={form.description}
+              onChangeText={(t) => set({ description: t.slice(0, 600) })}
+              placeholder="Matière, dimensions, conseils d’utilisation…"
+              multiline
+            />
+          </Fold>
+
+          {store.collections.length > 0 && (
+            <Fold icon={LayoutList} title="Collection" value={collectionName ?? 'Aucune'} highlight={!!collectionName} open={!!open.collection} onToggle={() => toggle('collection')}>
+              <SelectField
+                label="Collection"
                 optional
-                value={form.deliveryNote ?? ''}
-                onChangeText={(t) => set({ deliveryNote: t.slice(0, 160) })}
-                placeholder="Ex. Livré sous 48 h à Abidjan, 2 000 FCFA"
-                hint="Seulement si elle diffère de la livraison habituelle de votre boutique."
+                value={collectionName}
+                placeholder="Aucune"
+                onPress={() => openPicker('collection', collectionName, store.collections.map((c) => c.name))}
               />
-            </Animated.View>
+            </Fold>
           )}
+
+          <Fold
+            icon={Truck}
+            title="Livraison de ce produit"
+            value={form.deliveryNote?.trim() ? form.deliveryNote.trim() : 'Comme le reste de la boutique'}
+            highlight={!!form.deliveryNote?.trim()}
+            open={!!open.delivery}
+            onToggle={() => toggle('delivery')}
+            last
+          >
+            <FormField
+              label="Livraison de ce produit"
+              optional
+              value={form.deliveryNote ?? ''}
+              onChangeText={(t) => set({ deliveryNote: t.slice(0, 160) })}
+              placeholder="Ex. Livré sous 48 h à Abidjan, 2 000 FCFA"
+              hint="Seulement si elle diffère de la livraison habituelle de votre boutique."
+            />
+          </Fold>
         </View>
 
         {!isNew && <DeleteRow onPress={() => setConfirmDelete(true)} />}
@@ -484,15 +592,70 @@ function Step({ n, title, required, children }: { n: number; title: string; requ
   );
 }
 
-function Detail({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+/** Rubrique repliable : titre, valeur actuelle, contenu qui descend quand on touche la ligne. */
+function Fold({
+  icon: Icon,
+  title,
+  value,
+  highlight,
+  open,
+  onToggle,
+  last,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  value: string;
+  highlight?: boolean;
+  open: boolean;
+  onToggle: () => void;
+  last?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <View style={{ gap: 8 }}>
-      <View>
-        <Text style={styles.detailTitle}>{title}</Text>
-        {hint ? <Text style={styles.hint}>{hint}</Text> : null}
-      </View>
-      {children}
+    <View style={[styles.fold, last && { borderBottomWidth: 0 }]}>
+      <Pressable
+        onPress={onToggle}
+        style={({ pressed }) => [styles.foldHead, pressed && { opacity: 0.6 }]}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={`${title} : ${value}`}
+      >
+        <View style={styles.foldIcon}>
+          <Icon size={18} color={colors.cognac} strokeWidth={1.8} />
+        </View>
+        <View style={{ flex: 1, gap: 1 }}>
+          <Text style={styles.detailTitle}>{title}</Text>
+          <Text style={[styles.foldValue, highlight && { color: colors.cognac, fontFamily: fonts.semibold }]} numberOfLines={1}>
+            {value}
+          </Text>
+        </View>
+        <View style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}>
+          <ChevronDown size={20} color={colors.text} strokeWidth={1.8} />
+        </View>
+      </Pressable>
+      {open && (
+        <Animated.View entering={FadeInDown.duration(220)} style={styles.foldBody}>
+          {children}
+        </Animated.View>
+      )}
     </View>
+  );
+}
+
+function Pill({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={() => {
+        haptics.selection();
+        onPress();
+      }}
+      style={[styles.pill, active && styles.categoryActive]}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: active }}
+    >
+      <Text style={[styles.categoryText, active && { color: colors.white }]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -628,9 +791,17 @@ const styles = StyleSheet.create({
   categoryActive: { backgroundColor: colors.buttonPrimary, borderColor: colors.buttonPrimary },
   categoryText: { fontFamily: fonts.semibold, fontSize: 14.5, color: colors.text },
   more: { borderRadius: radii.xl, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, overflow: 'hidden' },
-  moreHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, minHeight: 64 },
+  moreHeader: { gap: 2, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10 },
   moreTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.text },
-  moreBody: { paddingHorizontal: 16, paddingBottom: 18, gap: 22 },
+  fold: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  foldHead: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, minHeight: 62 },
+  foldIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.backgroundAlt, alignItems: 'center', justifyContent: 'center' },
+  foldValue: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary },
+  foldBody: { paddingHorizontal: 16, paddingBottom: 18, paddingTop: 4, gap: 12 },
+  pill: { minHeight: 42, paddingHorizontal: 15, borderRadius: radii.pill, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  discountBox: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: radii.lg, backgroundColor: '#FBF1E4', borderWidth: 1, borderColor: colors.champagne },
+  discountOld: { fontFamily: fonts.regular, fontSize: 13.5, color: colors.textSecondary, textDecorationLine: 'line-through' },
+  discountNew: { fontFamily: fonts.bold, fontSize: 20, color: colors.text, letterSpacing: -0.3 },
   detailTitle: { fontFamily: fonts.semibold, fontSize: 15, color: colors.text },
   stockRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   soldOutBtn: { height: 48, paddingHorizontal: 18, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', backgroundColor: colors.background },

@@ -89,6 +89,7 @@ export type Database = {
       };
       order_items: {
         Row: {
+          color: string | null;
           id: string;
           image_path: string | null;
           order_id: string;

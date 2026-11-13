@@ -44,8 +44,9 @@ import { useSeller } from '@/store/useSeller';
 import { useShop } from '@/store/useShop';
 import { colors, fonts, radii, shadows, spacing, typography } from '@/theme';
 import { discountPercent, formatCount, formatFCFA } from '@/utils/format';
+import { COLOR_PRESETS } from '@/utils/productForm';
 import { haptics } from '@/utils/haptics';
-import { photoUrl, productImageUri, storeBannerUri } from '@/utils/images';
+import { demoGallery, photoUrl, productImageUri, storeBannerUri } from '@/utils/images';
 
 const IN_STOCK = '#1E7B4A';
 const LOW_STOCK = 5;
@@ -77,6 +78,7 @@ export default function ProductScreen() {
   const syncedAt = useRemoteCatalog((s) => s.syncedAt);
   const [size, setSize] = useState<string | undefined>();
   const [variant, setVariant] = useState<string | undefined>();
+  const [pickedColor, setPickedColor] = useState<string | undefined>();
   const [quantity, setQuantity] = useState(1);
   const [choiceError, setChoiceError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -123,10 +125,13 @@ export default function ProductScreen() {
   // Photos : toutes celles du vendeur, sinon la photo d'exemple.
   const ratio = Math.min(Math.max(product.aspect, 0.9), 1.15);
   const galleryHeight = Math.round(width * ratio);
-  const photos = product.imageUris?.length ? product.imageUris : [productImageUri(product, width, ratio)];
+  const photos = product.imageUris?.length ? product.imageUris : product.imageUri ? [productImageUri(product, width, ratio)] : demoGallery(product.photoId, width, ratio);
 
   const needsSize = !!product.sizes?.length;
   const needsVariant = !!product.variants?.length;
+  // Avec des variantes (« Rouge · M »), la couleur fait déjà partie du choix.
+  const colorChoice = !needsVariant && !!product.colors?.length;
+  const color = colorChoice ? (product.colors!.length === 1 ? product.colors![0] : pickedColor) : undefined;
   const chosen = product.variants?.find((v) => v.label === variant);
   const soldOut = product.stock === 0 && !needsVariant;
   const canBuy = !soldOut && product.salesEnabled !== false;
@@ -147,13 +152,18 @@ export default function ProductScreen() {
       setChoiceError('Choisissez une option avant de continuer.');
       return;
     }
+    if (colorChoice && !color) {
+      haptics.light();
+      setChoiceError('Choisissez une couleur avant de continuer.');
+      return;
+    }
     if (needsSize && !size) {
       haptics.light();
       setChoiceError('Choisissez votre taille avant de continuer.');
       return;
     }
     setChoiceError(null);
-    for (let i = 0; i < count; i += 1) addToCart(product.id, size, variant);
+    for (let i = 0; i < count; i += 1) addToCart(product.id, size, variant, color);
     haptics.success();
     if (buyNow) router.push('/cart');
   };
@@ -351,13 +361,41 @@ export default function ProductScreen() {
 
         {!!product.colors?.length && (
           <View style={styles.section}>
-            <Text style={styles.blockTitle}>Couleurs disponibles</Text>
+            <Text style={styles.blockTitle}>
+              {colorChoice ? 'Couleur' : 'Couleurs disponibles'}
+              {colorChoice && color ? <Text style={styles.blockValue}> : {color}</Text> : null}
+            </Text>
             <View style={styles.sizes}>
-              {product.colors.map((c) => (
-                <View key={c} style={styles.size}>
-                  <Text style={styles.sizeText}>{c}</Text>
-                </View>
-              ))}
+              {product.colors.map((c) => {
+                const active = colorChoice && c === color;
+                const hex = COLOR_PRESETS.find((preset) => preset.name === c)?.hex;
+                const swatch = hex ? <View style={[styles.swatch, { backgroundColor: hex }]} /> : null;
+                if (!colorChoice) {
+                  return (
+                    <View key={c} style={[styles.size, styles.colorChip]}>
+                      {swatch}
+                      <Text style={styles.sizeText}>{c}</Text>
+                    </View>
+                  );
+                }
+                return (
+                  <Pressable
+                    key={c}
+                    onPress={() => {
+                      haptics.selection();
+                      setPickedColor(c);
+                      setChoiceError(null);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={`Couleur ${c}`}
+                    style={[styles.size, styles.colorChip, active && styles.colorActive]}
+                  >
+                    {swatch}
+                    <Text style={styles.sizeText}>{c}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
         )}
@@ -671,6 +709,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  blockValue: { fontFamily: fonts.regular, color: colors.textSecondary },
+  colorChip: { flexDirection: 'row', gap: 8 },
+  colorActive: { borderColor: colors.text, borderWidth: 2 },
+  swatch: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: 'rgba(25,25,25,0.18)' },
   sizeActive: { backgroundColor: colors.buttonPrimary, borderColor: colors.buttonPrimary },
   sizeText: { fontFamily: fonts.semibold, fontSize: 14.5, color: colors.text },
 

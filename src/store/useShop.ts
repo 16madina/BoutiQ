@@ -12,6 +12,8 @@ export interface CartLine {
   size?: string;
   /** Variante choisie (« Rouge · M », « 500 ml »…), prix propre. */
   variant?: string;
+  /** Couleur choisie parmi celles du produit. */
+  color?: string;
 }
 
 export interface SearchFilters {
@@ -39,9 +41,9 @@ interface ShopState {
   filters: SearchFilters;
   setPromoCode: (storeKey: string, code: string | null) => void;
   toggleFavorite: (productId: string) => boolean;
-  addToCart: (productId: string, size?: string, variant?: string) => void;
-  setQuantity: (productId: string, quantity: number, size?: string, variant?: string) => void;
-  removeFromCart: (productId: string, size?: string, variant?: string) => void;
+  addToCart: (productId: string, size?: string, variant?: string, color?: string) => void;
+  setQuantity: (productId: string, quantity: number, size?: string, variant?: string, color?: string) => void;
+  removeFromCart: (productId: string, size?: string, variant?: string, color?: string) => void;
   /** Retire du panier et des favoris les anciens produits de démonstration. */
   purgeDemo: () => void;
   /** Retire les lignes commandées (les autres restent dans le panier). */
@@ -54,8 +56,8 @@ interface ShopState {
   resetFilters: () => void;
 }
 
-const sameLine = (l: CartLine, productId: string, size?: string, variant?: string) =>
-  l.productId === productId && l.size === size && l.variant === variant;
+const sameLine = (l: CartLine, productId: string, size?: string, variant?: string, color?: string) =>
+  l.productId === productId && l.size === size && l.variant === variant && l.color === color;
 
 /**
  * État client : favoris, panier, boutiques suivies, filtres.
@@ -98,28 +100,28 @@ export const useShop = create<ShopState>()(
       return changed ? { cart, favorites } : s;
     }),
 
-  addToCart: (productId, size, variant) =>
+  addToCart: (productId, size, variant, color) =>
     set((s) => {
       // Les produits d'exemple (aperçu des modèles de vitrine) ne se commandent pas.
       if (isDemoProduct(productId)) return s;
-      const existing = s.cart.find((l) => sameLine(l, productId, size, variant));
+      const existing = s.cart.find((l) => sameLine(l, productId, size, variant, color));
       if (existing) {
         return { cart: s.cart.map((l) => (l === existing ? { ...l, quantity: Math.min(l.quantity + 1, 99) } : l)) };
       }
-      return { cart: [...s.cart, { productId, size, variant, quantity: 1 }] };
+      return { cart: [...s.cart, { productId, size, variant, color, quantity: 1 }] };
     }),
 
-  setQuantity: (productId, quantity, size, variant) =>
+  setQuantity: (productId, quantity, size, variant, color) =>
     set((s) => ({
       cart:
         quantity <= 0
-          ? s.cart.filter((l) => !sameLine(l, productId, size, variant))
-          : s.cart.map((l) => (sameLine(l, productId, size, variant) ? { ...l, quantity: Math.min(quantity, 99) } : l)),
+          ? s.cart.filter((l) => !sameLine(l, productId, size, variant, color))
+          : s.cart.map((l) => (sameLine(l, productId, size, variant, color) ? { ...l, quantity: Math.min(quantity, 99) } : l)),
     })),
 
-  removeFromCart: (productId, size, variant) => set((s) => ({ cart: s.cart.filter((l) => !sameLine(l, productId, size, variant)) })),
+  removeFromCart: (productId, size, variant, color) => set((s) => ({ cart: s.cart.filter((l) => !sameLine(l, productId, size, variant, color)) })),
 
-  removeLines: (lines) => set((s) => ({ cart: s.cart.filter((l) => !lines.some((o) => sameLine(l, o.productId, o.size, o.variant))) })),
+  removeLines: (lines) => set((s) => ({ cart: s.cart.filter((l) => !lines.some((o) => sameLine(l, o.productId, o.size, o.variant, o.color))) })),
 
   clearCart: () => set({ cart: [] }),
 

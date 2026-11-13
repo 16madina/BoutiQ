@@ -67,7 +67,7 @@ export default function CartScreen() {
                   </View>
                 )}
                 {g.lines.map((l) => (
-                  <Animated.View key={`${l.productId}-${l.size ?? ''}-${l.variant ?? ''}`} layout={LinearTransition.springify()} exiting={FadeOut} style={styles.line}>
+                  <Animated.View key={`${l.productId}-${l.size ?? ''}-${l.variant ?? ''}-${l.color ?? ''}`} layout={LinearTransition.springify()} exiting={FadeOut} style={styles.line}>
                     <Pressable onPress={() => router.push({ pathname: '/product/[id]', params: { id: l.productId } })}>
                       {l.imageUri ? <Image source={{ uri: l.imageUri }} style={styles.thumb} contentFit="cover" /> : <View style={styles.thumb} />}
                     </Pressable>
@@ -75,22 +75,22 @@ export default function CartScreen() {
                       <Text style={typography.productName} numberOfLines={1}>
                         {l.name}
                       </Text>
-                      {l.size || l.variant ? (
+                      {l.size || l.variant || l.color ? (
                         <Text style={typography.caption} numberOfLines={1}>
-                          {[l.variant, l.size ? `Taille ${l.size}` : null].filter(Boolean).join(' · ')}
+                          {[l.variant, l.color, l.size ? `Taille ${l.size}` : null].filter(Boolean).join(' · ')}
                         </Text>
                       ) : null}
                       <Text style={typography.price}>{formatFCFA(l.unitPrice)}</Text>
                     </View>
                     <View style={styles.right}>
-                      <Pressable onPress={() => removeFromCart(l.productId, l.size, l.variant)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Retirer ${l.name}`}>
+                      <Pressable onPress={() => removeFromCart(l.productId, l.size, l.variant, l.color)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Retirer ${l.name}`}>
                         <Trash2 size={18} strokeWidth={1.7} color={colors.textSecondary} />
                       </Pressable>
                       <View style={styles.qty}>
                         <Pressable
                           onPress={() => {
                             haptics.selection();
-                            setQuantity(l.productId, l.quantity - 1, l.size, l.variant);
+                            setQuantity(l.productId, l.quantity - 1, l.size, l.variant, l.color);
                           }}
                           hitSlop={6}
                           style={styles.qtyBtn}
@@ -103,7 +103,7 @@ export default function CartScreen() {
                         <Pressable
                           onPress={() => {
                             haptics.selection();
-                            setQuantity(l.productId, l.quantity + 1, l.size, l.variant);
+                            setQuantity(l.productId, l.quantity + 1, l.size, l.variant, l.color);
                           }}
                           hitSlop={6}
                           style={styles.qtyBtn}
