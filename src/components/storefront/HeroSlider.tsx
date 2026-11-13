@@ -25,6 +25,8 @@ interface Props {
   focusX?: number;
   /** Calques posés au-dessus des photos (dégradés, textes, boutons). */
   children?: ReactNode;
+  /** Photos de secours si une photo du vendeur ne se charge plus (fichier disparu de l'appareil). */
+  fallback?: HeroImage[];
 }
 
 const AUTOPLAY_MS = 5000;
@@ -33,7 +35,10 @@ const AUTOPLAY_MS = 5000;
  * Bannière en diaporama : le vendeur peut ajouter plusieurs photos.
  * Glissement au doigt, défilement automatique, points de pagination.
  */
-export function HeroSlider({ images, width, height, palette, dots = 'light', dotsBottom = 16, focusX = 0.5, children }: Props) {
+export function HeroSlider({ images: wanted, width, height, palette, dots = 'light', dotsBottom = 16, focusX = 0.5, children, fallback }: Props) {
+  const [broken, setBroken] = useState(false);
+  const images = broken && fallback?.length ? fallback : wanted;
+  const onError = fallback?.length && !broken ? () => setBroken(true) : undefined;
   const ref = useRef<ComponentRef<typeof ScrollView>>(null);
   const [index, setIndex] = useState(0);
   const count = images.length;
@@ -65,7 +70,7 @@ export function HeroSlider({ images, width, height, palette, dots = 'light', dot
       {count === 0 ? (
         <LinearGradient colors={[palette.accentSoft, palette.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       ) : count === 1 ? (
-        <Image source={{ uri: heroUri(images[0], width, aspect) }} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition={position} transition={300} cachePolicy="memory-disk" />
+        <Image source={{ uri: heroUri(images[0], width, aspect) }} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition={position} transition={300} cachePolicy="memory-disk" onError={onError} />
       ) : (
         <ScrollView
           ref={ref}
@@ -87,6 +92,7 @@ export function HeroSlider({ images, width, height, palette, dots = 'light', dot
               key={`${img.uri ?? img.photoId}-${i}`}
               source={{ uri: heroUri(img, width, aspect) }}
               style={{ width, height }}
+              onError={onError}
               contentFit="cover"
               contentPosition={position}
               transition={300}

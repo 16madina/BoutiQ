@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { countProducts } from '@/api/catalog';
@@ -8,12 +9,39 @@ import { useRemoteCatalog } from '@/api/remoteCatalog';
 import { useSeller } from '@/store/useSeller';
 import { useTabBarSpace } from '@/components/FloatingTabBar';
 import { PressableScale } from '@/components/PressableScale';
-import { ScreenHeader } from '@/components/ScreenHeader';
+import { StoresList } from '@/components/StoresList';
+import { TitleTabs } from '@/components/TitleTabs';
 import { CATEGORIES } from '@/data/demo';
 import { colors, fonts, radii, shadows, spacing } from '@/theme';
 import { photoUrl } from '@/utils/images';
 
+type View_ = 'categories' | 'stores';
+
+/** Onglet « Catégories » : deux titres en haut, Catégories et Boutiques. */
 export default function CategoriesScreen() {
+  // « Découvrir les boutiques » ailleurs dans l'app ouvre directement la liste des boutiques.
+  const params = useLocalSearchParams<{ view?: string }>();
+  const [view, setView] = useState<View_>(params.view === 'stores' ? 'stores' : 'categories');
+  useEffect(() => {
+    if (params.view === 'stores' || params.view === 'categories') setView(params.view);
+  }, [params.view]);
+
+  return (
+    <View style={styles.screen}>
+      <TitleTabs
+        tabs={[
+          { id: 'categories', label: 'Catégories' },
+          { id: 'stores', label: 'Boutiques' },
+        ]}
+        value={view}
+        onChange={setView}
+      />
+      {view === 'stores' ? <StoresList /> : <CategoriesGrid />}
+    </View>
+  );
+}
+
+function CategoriesGrid() {
   const { width } = useWindowDimensions();
   const bottomSpace = useTabBarSpace();
   // Recompte quand le catalogue en ligne ou les produits du vendeur changent.
@@ -22,8 +50,6 @@ export default function CategoriesScreen() {
   const cardWidth = (width - spacing.screen * 2 - spacing.gridGap) / 2;
 
   return (
-    <View style={styles.screen}>
-      <ScreenHeader title="Catégories" back={false} large />
       <ScrollView contentContainerStyle={[styles.grid, { paddingBottom: bottomSpace }]} showsVerticalScrollIndicator={false}>
         {CATEGORIES.map((c, i) => {
           const tall = i % 3 === 0;
@@ -54,7 +80,6 @@ export default function CategoriesScreen() {
           );
         })}
       </ScrollView>
-    </View>
   );
 }
 

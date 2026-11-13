@@ -130,6 +130,25 @@ export async function ensureRemoteStore(): Promise<string> {
   return storeId;
 }
 
+/** Nom, description, ville et catégorie : envoyés en ligne après une modification dans « Ma boutique ». */
+export async function syncStoreInfo() {
+  const { store } = seller();
+  if (!store?.remoteId) return; // pas encore en ligne : tout partira à la première publication
+  ok(
+    await client()
+      .from('stores')
+      .update({
+        name: store.name.trim(),
+        description: store.description.slice(0, 280),
+        city: store.city,
+        country: store.country,
+        category: store.categoryId,
+      })
+      .eq('id', store.remoteId),
+  );
+  syncRemoteCatalog();
+}
+
 async function uploadIfLocal(img: LocalImage | undefined, folder: string, maxSide: number) {
   if (!img || img.remotePath) return img;
   try {

@@ -1,17 +1,26 @@
 /**
  * Couche d'accès au catalogue.
- * Aujourd'hui : simulation d'un serveur (latence + pagination) sur les données de démo.
- * Demain : remplacer le corps de ces fonctions par des appels HTTP — les écrans ne changent pas.
+ * Les produits et boutiques viennent de Supabase (boutiques réelles) et de la boutique
+ * créée sur l'appareil, complétés par le catalogue de démonstration tant que DEMO_DATA
+ * est actif (voir plus bas). Sans lui, la démo ne sert qu'aux exemples de modèles de vitrine.
  */
 import { remoteProducts, remoteStore, remoteStores } from '@/api/remoteCatalog';
 import { getSellerPublicProducts, getSellerPublicStore, isSellerStoreVerified } from '@/api/sellerCatalog';
 import { CATEGORIES, DEMO_CATALOG, STORES } from '@/data/demo';
 import { DEMO_STOCK, STOREFRONT_EXTRA_PRODUCTS } from '@/data/storefronts';
+import { supabaseEnabled } from '@/lib/supabase';
 import { useSeller } from '@/store/useSeller';
 import type { Category, Page, Product, ProductQuery, Store } from '@/types';
 import { discountPercent, normalize } from '@/utils/format';
 
 export const PAGE_SIZE = 10;
+
+/**
+ * Catalogue de démonstration (affiches, offres, boutiques et produits d'exemple) affiché
+ * avec les vraies boutiques. Il garde l'accueil rempli tant que le vrai catalogue est petit.
+ * Pour le retirer le jour du lancement : EXPO_PUBLIC_DEMO_CATALOG=0 dans .env.local.
+ */
+export const DEMO_DATA = !supabaseEnabled || process.env.EXPO_PUBLIC_DEMO_CATALOG !== '0';
 
 /** Passer à `true` pour tester l'affichage des erreurs réseau. */
 const SIMULATE_FLAKY_NETWORK = false;
@@ -29,6 +38,9 @@ function delay(ms: number, signal?: AbortSignal) {
 }
 
 const storeById = new Map(STORES.map((s) => [s.id, s]));
+
+/** Boutique d'exemple (aperçu « Voir » des modèles de vitrine). */
+export const isDemoStore = (id?: string) => !!id && storeById.has(id);
 
 /** Suffixe des séries répétées du catalogue de démo (« robe-wax-2 »). */
 const SERIES_SUFFIX = /-[23]$/;
@@ -57,18 +69,24 @@ const DEMO_WITH_STOCK: Product[] = DEMO_CATALOG.map((p) => {
 /** Vitrine : chaque produit de démo une seule fois + produits réservés à la vitrine. */
 const STOREFRONT_CATALOG: Product[] = [...STOREFRONT_EXTRA_PRODUCTS, ...DEMO_WITH_STOCK.filter((p) => !SERIES_SUFFIX.test(p.id))];
 
+const DEMO_PRODUCT_IDS = new Set([...DEMO_WITH_STOCK, ...STOREFRONT_EXTRA_PRODUCTS].map((p) => p.id));
+
+/** Produit d'exemple (visible dans l'aperçu des modèles, jamais commandable avec le vrai catalogue). */
+export const isDemoProduct = (id: string) => !DEMO_DATA && DEMO_PRODUCT_IDS.has(id);
+
 function catalogFor(q: ProductQuery): Product[] {
   const sellerProducts = getSellerPublicProducts();
   // La boutique du vendeur connecté est lue sur l'appareil (source à jour) :
   // sa copie Supabase est écartée pour ne jamais afficher un produit deux fois.
   const ownSlug = useSeller.getState().store?.slug;
   const remote = ownSlug ? remoteProducts().filter((p) => p.storeId !== ownSlug) : remoteProducts();
-  if (q.storefront) return [...remote, ...sellerProducts, ...STOREFRONT_CATALOG];
+  // Vitrine : les produits d'exemple n'existent que sur les boutiques d'exemple.
+  if (q.storefront) return [...remote, ...sellerProducts, ...(DEMO_DATA || isDemoStore(q.storeId) ? STOREFRONT_CATALOG : [])];
   // Produits réels (Supabase) : dans les flux généraux seulement si la boutique est vérifiée.
   const remoteVisible = remote.filter((p) => p.salesEnabled);
-  if (sellerProducts.length === 0) return remoteVisible.length ? [...remoteVisible, ...DEMO_WITH_STOCK] : DEMO_WITH_STOCK;
-  const visible = isSellerStoreVerified() || (q.storeId != null && sellerProducts.some((p) => p.storeId === q.storeId));
-  return visible ? [...remoteVisible, ...sellerProducts, ...DEMO_WITH_STOCK] : [...remoteVisible, ...DEMO_WITH_STOCK];
+  const ownVisible =
+    sellerProducts.length > 0 && (isSellerStoreVerified() || (q.storeId != null && sellerProducts.some((p) => p.storeId === q.storeId)));
+  return [...remoteVisible, ...(ownVisible ? sellerProducts : []), ...(DEMO_DATA ? DEMO_WITH_STOCK : [])];
 }
 
 export function getCategory(id: string): Category | undefined {
@@ -143,7 +161,16 @@ export function peekProduct(id: string): Product | undefined {
 
 export function peekProducts(ids: string[]): Product[] {
   const set = new Set(ids);
-  return [...remoteProducts(), ...getSellerPublicProducts(), ...STOREFRONT_EXTRA_PRODUCTS, ...DEMO_WITH_STOCK].filter((p) => set.has(p.id));
+  const demo = DEMO_DATA ? [...STOREFRONT_EXTRA_PRODUCTS, ...DEMO_WITH_STOCK] : [];
+  return [...remoteProducts(), ...getSellerPublicProducts(), ...demo].filter((p) => set.has(p.id));
+}
+
+/** Produits visibles dans les flux généraux, triés (lecture synchrone : accueil, affiches, offres). */
+export function feedProducts(q: ProductQuery = {}): Product[] {
+  return sortProducts(
+    catalogFor(q).filter((p) => !SERIES_SUFFIX.test(p.id) && matches(p, q)),
+    q.sort,
+  );
 }
 
 /** Lecture synchrone des produits d'une vitrine (sections Nouveautés, Promotions…). */
@@ -154,11 +181,31 @@ export function storefrontProducts(q: ProductQuery): Product[] {
   );
 }
 
+/**
+ * Articles proches d'un produit : même catégorie, prix voisin (± 35 %), les plus proches d'abord.
+ * `samePrice` dit si la liste ne contient que des prix voisins (sinon elle est complétée
+ * par d'autres articles de la catégorie).
+ */
+export function similarProducts(product: Product, limit = 10): { items: Product[]; samePrice: boolean } {
+  const pool = feedProducts({ categoryId: product.categoryId }).filter((p) => p.id !== product.id && baseKey(p.id) !== baseKey(product.id));
+  const gap = (p: Product) => Math.abs(p.price - product.price);
+  const near = pool.filter((p) => gap(p) <= product.price * 0.35).sort((a, b) => gap(a) - gap(b));
+  if (near.length >= 3) return { items: near.slice(0, limit), samePrice: true };
+  return { items: [...pool].sort((a, b) => gap(a) - gap(b)).slice(0, limit), samePrice: false };
+}
+
+/** Autres articles de la même boutique. */
+export function moreFromStore(product: Product, limit = 10): Product[] {
+  return storefrontProducts({ storeId: product.storeId })
+    .filter((p) => p.id !== product.id && baseKey(p.id) !== baseKey(product.id))
+    .slice(0, limit);
+}
+
 export function searchStores(query: string): Store[] {
   const needle = normalize(query);
   if (!needle) return [];
   const own = getSellerPublicStore(useSeller.getState().store?.slug ?? '');
-  return [...(own ? [own] : []), ...remoteStores().filter((s) => s.id !== own?.id), ...STORES].filter((s) =>
+  return [...(own ? [own] : []), ...remoteStores().filter((s) => s.id !== own?.id), ...(DEMO_DATA ? STORES : [])].filter((s) =>
     normalize(`${s.name} ${s.city} ${s.description}`).includes(needle),
   );
 }
@@ -169,7 +216,7 @@ export function searchCategories(query: string): Category[] {
   return CATEGORIES.filter((c) => normalize(c.name).includes(needle));
 }
 
-/** Nombre d'articles visibles dans les flux (démo, boutiques vérifiées, sa propre boutique vérifiée). */
+/** Nombre d'articles visibles dans les flux (boutiques vérifiées, sa propre boutique vérifiée). */
 export function countProducts(q: ProductQuery): number {
   // Sans les séries répétées du catalogue de démonstration : chaque article compte une fois.
   return catalogFor(q).filter((p) => !SERIES_SUFFIX.test(p.id) && matches(p, q)).length;

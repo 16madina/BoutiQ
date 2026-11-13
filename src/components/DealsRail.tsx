@@ -3,7 +3,8 @@ import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { peekProducts } from '@/api/catalog';
+import { DEMO_DATA, feedProducts, peekProducts } from '@/api/catalog';
+import { useRemoteCatalog } from '@/api/remoteCatalog';
 import { SectionHeader } from '@/components/SectionHeader';
 import { LIMITED_DEAL_IDS } from '@/data/posters';
 import { colors, fonts, radii, spacing, typography } from '@/theme';
@@ -49,7 +50,13 @@ function DealCard({ product }: { product: Product }) {
 
 /** Bande « Offres à durée limitée » : produits en promotion à faire défiler. */
 export function DealsRail() {
-  const products = useMemo(() => peekProducts(LIMITED_DEAL_IDS).filter((p) => p.oldPrice), []);
+  // Les plus fortes remises des boutiques réelles (rien à afficher = bande masquée).
+  const syncedAt = useRemoteCatalog((s) => s.syncedAt);
+  const products = useMemo(
+    () => (DEMO_DATA ? peekProducts(LIMITED_DEAL_IDS).filter((p) => p.oldPrice) : feedProducts({ onlyPromo: true, sort: 'discount' }).slice(0, 8)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [syncedAt],
+  );
   if (products.length === 0) return null;
   return (
     <View style={styles.band}>

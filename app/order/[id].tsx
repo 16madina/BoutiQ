@@ -154,6 +154,7 @@ export default function OrderScreen() {
               <Text style={styles.itemTotal}>{formatFCFA(i.unitPrice * i.quantity)}</Text>
             </View>
           ))}
+          {order.discount > 0 && <Line label={`Code promo${order.promoCode ? ` ${order.promoCode}` : ''}`} value={`− ${formatFCFA(order.discount)}`} />}
           <View style={styles.sumRow}>
             <Text style={typography.h3}>Total</Text>
             <Text style={[typography.price, { fontSize: 19 }]}>{formatFCFA(order.total)}</Text>

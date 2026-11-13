@@ -11,8 +11,8 @@ import { EmptyState } from '@/components/EmptyState';
 import { FollowButton } from '@/components/FollowButton';
 import { useTabBarSpace } from '@/components/FloatingTabBar';
 import { PressableScale } from '@/components/PressableScale';
-import { ScreenHeader } from '@/components/ScreenHeader';
 import { StoreAvatar } from '@/components/StoreAvatar';
+import { DEMO_DATA } from '@/api/catalog';
 import { STORES } from '@/data/demo';
 import { useSeller } from '@/store/useSeller';
 import { useShop } from '@/store/useShop';
@@ -28,8 +28,8 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'verified', label: 'Vérifiées' },
 ];
 
-/** Toutes les boutiques : la sienne, les boutiques réelles (Supabase) et celles de démonstration. */
-export default function StoresScreen() {
+/** Toutes les boutiques : la sienne et les boutiques réelles (Supabase). */
+export function StoresList() {
   const bottomSpace = useTabBarSpace();
   const own = useSeller((s) => s.store);
   const syncedAt = useRemoteCatalog((s) => s.syncedAt);
@@ -41,7 +41,7 @@ export default function StoresScreen() {
     const mine = own ? [toPublicStore(own)] : [];
     const remote = remoteStores().filter((s) => s.id !== own?.slug);
     const ids = new Set([...mine, ...remote].map((s) => s.id));
-    return [...mine, ...remote, ...STORES.filter((s) => !ids.has(s.id))];
+    return [...mine, ...remote, ...(DEMO_DATA ? STORES.filter((s) => !ids.has(s.id)) : [])];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [own, syncedAt]);
 
@@ -56,7 +56,6 @@ export default function StoresScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title="Boutiques" back={false} large />
       <View style={styles.search}>
         <Search size={19} color={colors.text} strokeWidth={1.8} />
         <TextInput

@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { ArrowRight, BadgeCheck, Check, ChevronLeft, MapPin, MessageCircle, Plus, Search, Share2, ShoppingCart, Star, Truck } from 'lucide-react-native';
+import { ArrowRight, BadgeCheck, Check, ChevronLeft, MapPin, MessageCircle, Pencil, Plus, Search, Share2, ShoppingCart, Star, Truck } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -10,6 +10,7 @@ import type { Storefront } from '@/api/storefront';
 import { PressableScale } from '@/components/PressableScale';
 import { StoreAvatar } from '@/components/StoreAvatar';
 import { HeroSlider, heroUri } from '@/components/storefront/HeroSlider';
+import { SiteHero, type SiteSection } from '@/components/storefront/SiteHero';
 import { useCartCount, useShop } from '@/store/useShop';
 import { colors, fonts, radii, shadows, spacing } from '@/theme';
 import { formatCount } from '@/utils/format';
@@ -25,6 +26,10 @@ interface Props {
   /** Bouton de la bannière et loupe : mènent au catalogue. */
   onExplore?: () => void;
   onBack?: () => void;
+  /** Accueil de l'espace vendeur : le retour devient un crayon « Personnaliser ». */
+  owner?: boolean;
+  /** Menu de la vitrine « site web » (Accueil, Produits, À propos, Contact). */
+  onNavigate?: (section: SiteSection) => void;
 }
 
 export const DARK_BG = '#14161A';
@@ -65,6 +70,8 @@ export function StoreHero(props: Props) {
       return <StackedHero {...props} />;
     case 'inset':
       return <InsetHero {...props} />;
+    case 'site':
+      return <SiteHero {...props} />;
     case 'banner':
       return <BannerHero {...props} />;
   }
@@ -106,6 +113,7 @@ function TopBar({
   center,
   glass,
   onBack,
+  owner,
   onSearch,
   children,
 }: {
@@ -114,13 +122,14 @@ function TopBar({
   center?: boolean;
   glass?: boolean;
   onBack?: () => void;
+  owner?: boolean;
   onSearch?: () => void;
   children: ReactNode;
 }) {
   return (
     <View style={styles.bar}>
-      <BarIcon onPress={onBack ?? goBack} label="Retour" glass={glass}>
-        <ChevronLeft size={23} color={ink} strokeWidth={1.9} />
+      <BarIcon onPress={onBack ?? goBack} label={owner ? 'Personnaliser ma boutique' : 'Retour'} glass={glass}>
+        {owner ? <Pencil size={19} color={ink} strokeWidth={1.9} /> : <ChevronLeft size={23} color={ink} strokeWidth={1.9} />}
       </BarIcon>
       <View style={[styles.barTitle, center ? { alignItems: 'center' } : { alignItems: 'flex-start', paddingLeft: 2 }]}>{children}</View>
       <BarIcon onPress={onSearch} label={`Rechercher dans ${sf.store.name}`} glass={glass}>
@@ -238,7 +247,7 @@ function SheetCap() {
 /* ------------------------------------------------- 1. Éditorial Élégance */
 
 function CollageHero(props: Props) {
-  const { sf, width, topInset, onExplore, onBack } = props;
+  const { sf, width, topInset, onExplore, onBack, owner } = props;
   const { palette, heroImages } = sf;
   const h = Math.round(width * sf.template.heroRatio);
   const bigW = Math.round(width * 0.6);
@@ -249,7 +258,7 @@ function CollageHero(props: Props) {
 
   return (
     <View style={{ paddingTop: topInset }}>
-      <TopBar sf={sf} ink={colors.text} onBack={onBack} onSearch={onExplore}>
+      <TopBar sf={sf} owner={owner} ink={colors.text} onBack={onBack} onSearch={onExplore}>
         <Text style={[styles.editorialName, { fontSize: sf.store.name.length > 16 ? 23 : 27 }]} numberOfLines={1} accessibilityRole="header">
           {sf.store.name}
         </Text>
@@ -290,7 +299,7 @@ function CollageHero(props: Props) {
 /* ------------------------------------------------- 2. Mode & Accessoires */
 
 function OverlayHero(props: Props) {
-  const { sf, width, topInset, onExplore, onBack } = props;
+  const { sf, width, topInset, onExplore, onBack, owner } = props;
   const { palette } = sf;
   const h = Math.round(width * sf.template.heroRatio) + topInset;
   return (
@@ -303,7 +312,7 @@ function OverlayHero(props: Props) {
           pointerEvents="none"
         />
         <View style={{ paddingTop: topInset }}>
-          <TopBar sf={sf} ink={LIGHT_INK} center onBack={onBack} onSearch={onExplore}>
+          <TopBar sf={sf} owner={owner} ink={LIGHT_INK} center onBack={onBack} onSearch={onExplore}>
             <Brand sf={sf} ink={LIGHT_INK} subInk="rgba(255,249,241,0.78)" serif size={24} />
           </TopBar>
         </View>
@@ -421,14 +430,14 @@ function withAlpha(hex: string, alpha: number) {
 }
 
 function BannerHero(props: Props) {
-  const { sf, width, topInset, onExplore, onBack } = props;
+  const { sf, width, topInset, onExplore, onBack, owner } = props;
   const { palette } = sf;
   const h = Math.round(width * sf.template.heroRatio);
   // Tons chauds (terracotta) : la barre et le voile de la photo reprennent la couleur de la boutique.
   return (
     <View>
       <View style={{ paddingTop: topInset, backgroundColor: palette.accentSoft }}>
-        <TopBar sf={sf} ink={palette.accentInk} center onBack={onBack} onSearch={onExplore}>
+        <TopBar sf={sf} owner={owner} ink={palette.accentInk} center onBack={onBack} onSearch={onExplore}>
           <Brand sf={sf} ink={palette.accentInk} subInk={withAlpha(palette.accentInk, 0.75)} size={21} />
         </TopBar>
         <View style={{ height: 8 }} />

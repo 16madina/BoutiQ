@@ -5,7 +5,8 @@ import { ArrowRight } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
-import { peekProducts } from '@/api/catalog';
+import { DEMO_DATA, feedProducts, peekProducts } from '@/api/catalog';
+import { useRemoteCatalog } from '@/api/remoteCatalog';
 import { PressableScale } from '@/components/PressableScale';
 import { POSTERS, type Poster } from '@/data/posters';
 import { colors, fonts, radii, shadows, spacing } from '@/theme';
@@ -97,12 +98,45 @@ function GridPoster({ poster, width, height }: { poster: Extract<Poster, { kind:
   );
 }
 
+/**
+ * Affiches à montrer. Sans le catalogue de démonstration, les affiches photo restent ;
+ * une affiche « grille » n'apparaît que s'il y a 4 vrais produits pour la remplir.
+ */
+function useLivePosters(): Poster[] {
+  const syncedAt = useRemoteCatalog((s) => s.syncedAt);
+  return useMemo(() => {
+    if (DEMO_DATA) return POSTERS;
+    const promos = feedProducts({ onlyPromo: true, sort: 'discount' });
+    const all = feedProducts({ sort: 'relevance' });
+    let promoStart = 0;
+    let recentUsed = false;
+    const result: Poster[] = [];
+    for (const p of POSTERS) {
+      // Les affiches photo sont de la décoration : elles restent toujours visibles.
+      if (p.kind === 'photo') {
+        result.push(p);
+        continue;
+      }
+      const source = p.showDiscount ? promos.slice(promoStart, promoStart + 4) : recentUsed ? [] : all.slice(0, 4);
+      if (source.length < 4) continue;
+      if (p.showDiscount) promoStart += 4;
+      else recentUsed = true;
+      const [a, b, c, d] = source.map((x) => x.id);
+      result.push({ ...p, productIds: [a, b, c, d] });
+    }
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncedAt]);
+}
+
 /** Rangée d'affiches verticales (façon vitrine de grand magasin), à faire défiler horizontalement. */
 export function PosterRail() {
+  const posters = useLivePosters();
   const { width: screen } = useWindowDimensions();
   // Une affiche et demie visible sur téléphone : on comprend tout de suite que ça défile.
   const width = Math.min(Math.round((screen - spacing.screen) * 0.64), 280);
   const height = Math.round(width * 1.5);
+  if (posters.length === 0) return null;
 
   return (
     <ScrollView
@@ -112,7 +146,7 @@ export function PosterRail() {
       decelerationRate="fast"
       contentContainerStyle={{ paddingHorizontal: spacing.screen, gap: GAP, paddingBottom: 6 }}
     >
-      {POSTERS.map((p) =>
+      {posters.map((p) =>
         p.kind === 'photo' ? (
           <PhotoPoster key={p.id} poster={p} width={width} height={height} />
         ) : (

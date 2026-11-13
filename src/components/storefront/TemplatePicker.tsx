@@ -54,7 +54,8 @@ export function TemplateThumb({ template, accent }: { template: StorefrontTempla
   const palette = buildPalette(accent ?? template.defaultAccent);
   const photo = { uri: photoUrl(SAMPLE_PHOTO[template.id], W, 1) };
 
-  switch (template.heroLayout) {
+  // La vignette garde le dessin propre à chaque modèle.
+  switch (template.legacyLayout ?? template.heroLayout) {
     case 'collage':
       return (
         <View style={styles.thumb}>

@@ -1,7 +1,9 @@
 import * as Linking from 'expo-linking';
-import { Link2, MessageCircle, Phone, Share2 } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { Link2, MessageCircle, MessagesSquare, Phone, Share2 } from 'lucide-react-native';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
+import { openConversation } from '@/api/messages';
 import type { Storefront } from '@/api/storefront';
 import { SheetAction, StoreSheet } from '@/components/storefront/StoreSheet';
 import { shareAnywhere, shareOnWhatsApp, storeDisplayAddress, storeShareMessage } from '@/config/links';
@@ -22,18 +24,40 @@ async function open(url: string) {
   }
 }
 
-/** « Contacter » : WhatsApp ou appel, avec un message déjà écrit. */
+/** « Contacter » : message dans BoutiQ, WhatsApp ou appel. */
 export function StoreContactSheet({ sf, visible, onClose }: { sf: Storefront; visible: boolean; onClose: () => void }) {
   const phone = sf.settings.contactPhone;
   const message = `Bonjour ${sf.store.name}, je vous contacte depuis votre boutique BoutiQ.`;
+  // Messagerie de l'appli : pour les vraies boutiques, sauf la sienne.
+  const remoteId = sf.store.remoteId;
+  const canChat = !!remoteId && !sf.isOwn;
+  const chat = async () => {
+    haptics.light();
+    onClose();
+    try {
+      const id = await openConversation(remoteId!);
+      router.push({ pathname: '/chat/[id]', params: { id, title: sf.store.name, sub: 'Boutique' } });
+    } catch (e) {
+      Alert.alert('Message impossible', (e as Error).message);
+    }
+  };
 
   return (
     <StoreSheet
       visible={visible}
       onClose={onClose}
       title={`Contacter ${sf.store.name}`}
-      subtitle={phone ? 'Le vendeur vous répond directement.' : undefined}
+      subtitle={phone || canChat ? 'Le vendeur vous répond directement.' : undefined}
     >
+      {canChat ? (
+        <SheetAction
+          icon={<MessagesSquare size={20} color={sf.palette.onAccent} strokeWidth={1.9} />}
+          tint={sf.palette.accent}
+          label="Écrire un message"
+          detail="Dans BoutiQ : la réponse arrive dans l’onglet Messages"
+          onPress={chat}
+        />
+      ) : null}
       {phone ? (
         <>
           <SheetAction
@@ -59,7 +83,7 @@ export function StoreContactSheet({ sf, visible, onClose }: { sf: Storefront; vi
             }}
           />
         </>
-      ) : (
+      ) : canChat ? null : (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>Pas encore de numéro</Text>
           <Text style={styles.emptyText}>

@@ -1,260 +1,122 @@
-import { router, useFocusEffect, type Href } from 'expo-router';
-import { useCallback, useState } from 'react';
-import {
-  ChartColumn,
-  Check,
-  ChevronRight,
-  Eye,
-  Paintbrush,
-  MessageCircle,
-  Package,
-  ReceiptText,
-  Share2,
-  Store as StoreIcon,
-  Wallet,
-  type LucideIcon,
-} from 'lucide-react-native';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { router, useFocusEffect } from 'expo-router';
+import { ChevronRight, Paintbrush, ReceiptText, type LucideIcon } from 'lucide-react-native';
+import { useCallback } from 'react';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { toPublicStore } from '@/api/sellerCatalog';
-import { fetchDashboardStats, type DashboardStats } from '@/api/sellerSync';
-import { resolveOwnSettings } from '@/api/storefront';
 import { useTabBarSpace } from '@/components/FloatingTabBar';
 import { PressableScale } from '@/components/PressableScale';
-import { STATUS_META, StatusBadge } from '@/components/seller/StatusBadge';
+import { AddProductFab } from '@/components/seller/AddProductFab';
 import { SpaceSwitchPill } from '@/components/seller/SpaceSwitch';
-import { StoreAvatar } from '@/components/StoreAvatar';
-import { shareOnWhatsApp, storeShareMessage } from '@/config/links';
+import { STATUS_META, StatusBadge } from '@/components/seller/StatusBadge';
+import { StorefrontScreen } from '@/components/storefront/StorefrontScreen';
 import { useSeller } from '@/store/useSeller';
-import { TEMPLATES } from '@/storefront/templates';
-import { colors, fonts, radii, shadows, spacing, typography } from '@/theme';
-import { formatCount, formatFCFA } from '@/utils/format';
+import { useSellerOrders } from '@/store/useSellerOrders';
+import { colors, fonts, radii } from '@/theme';
 import { haptics } from '@/utils/haptics';
 
-function Kpi({ icon: Icon, label, value, delay }: { icon: LucideIcon; label: string; value: string; delay: number }) {
-  return (
-    <Animated.View entering={FadeInDown.delay(delay).duration(380)} style={styles.kpi}>
-      <View style={styles.kpiIcon}>
-        <Icon size={17} color={colors.cognac} strokeWidth={1.8} />
-      </View>
-      <Text style={styles.kpiValue} numberOfLines={1} adjustsFontSizeToFit>
-        {value}
-      </Text>
-      <Text style={styles.kpiLabel}>{label}</Text>
-    </Animated.View>
-  );
-}
-
-function ChecklistItem({ done, label, onPress }: { done: boolean; label: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} disabled={done} style={({ pressed }) => [styles.checkRow, pressed && { opacity: 0.6 }]}>
-      <View style={[styles.checkCircle, done && styles.checkCircleDone]}>{done && <Check size={13} color={colors.white} strokeWidth={3} />}</View>
-      <Text style={[styles.checkLabel, done && styles.checkLabelDone]}>{label}</Text>
-      {!done && <ChevronRight size={17} color={colors.textSecondary} />}
-    </Pressable>
-  );
-}
-
-/** Tableau de bord vendeur. */
-export default function SellerDashboard() {
+/**
+ * Accueil de l'espace vendeur : la boutique elle-même, telle que les clients la voient.
+ * Au-dessus, une fine barre réservée au vendeur (statut, modifier, commandes à traiter).
+ */
+export default function SellerHome() {
   const insets = useSafeAreaInsets();
   const bottomSpace = useTabBarSpace();
+  // Petit écran : le bouton « Modifier » garde seulement son icône, pour que le statut tienne sur une ligne.
+  const narrow = useWindowDimensions().width < 390;
   const store = useSeller((s) => s.store);
-  const products = useSeller((s) => s.products);
-  const views = useSeller((s) => s.storeViews);
-  // Chiffres réels (30 derniers jours) une fois la boutique en ligne.
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const productCount = useSeller((s) => s.products.length);
+
+  // Commandes en attente de confirmation : rappel discret en haut de la boutique.
+  const todo = useSellerOrders((s) => s.pending);
   useFocusEffect(
     useCallback(() => {
-      fetchDashboardStats()
-        .then(setStats)
-        .catch(() => {});
+      useSellerOrders.getState().refresh();
     }, []),
   );
-  if (!store) return null;
 
-  const publicStore = toPublicStore(store);
-  const published = products.filter((p) => p.status === 'published').length;
+  if (!store) return null;
   const status = STATUS_META[store.status];
-  const checklist = [
-    { done: !!store.logo && !!store.banner, label: 'Ajouter un logo et une bannière', href: '/customize' as Href },
-    { done: published >= 3, label: `Publier 3 produits (${Math.min(published, 3)}/3)`, href: '/product-editor' as Href },
-    { done: store.status === 'verified' || store.status === 'pending_review', label: 'Faire vérifier ma boutique', href: '/verification' as Href },
-  ];
-  const doneCount = checklist.filter((c) => c.done).length;
+  const needsReview = store.status === 'draft' || store.status === 'rejected';
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: bottomSpace + 20 }} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <StoreAvatar store={publicStore} size={48} />
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={styles.storeName} numberOfLines={1}>
-            {store.name}
-          </Text>
-          <StatusBadge status={store.status} />
-        </View>
-        <SpaceSwitchPill to="buyer" />
-      </View>
-
-      {/* Action principale, toujours en tête */}
-      <Animated.View entering={FadeInDown.duration(380)} style={styles.section}>
-        <PressableScale
-          onPress={() => {
-            haptics.medium();
-            router.push('/product-editor');
-          }}
-          style={styles.addCard}
-          accessibilityRole="button"
-          accessibilityLabel="Ajouter un produit"
-        >
-          <View style={styles.addIcon}>
-            <Text style={styles.addPlus}>+</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.addTitle}>Ajouter un produit</Text>
-            <Text style={styles.addText}>Photos, prix, c’est en ligne en 1 minute</Text>
-          </View>
-          <ChevronRight size={20} color="#EAD5BC" />
-        </PressableScale>
-      </Animated.View>
-
-      <Animated.View entering={FadeInDown.delay(30).duration(380)} style={styles.section}>
-        <Pressable onPress={() => router.push('/customize')} style={({ pressed }) => [styles.card, styles.customizeRow, pressed && { opacity: 0.85 }]} accessibilityRole="button">
-          <Paintbrush size={21} color={colors.cognac} strokeWidth={1.7} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.customizeTitle}>Personnaliser ma boutique</Text>
-            <Text style={styles.customizeText}>
-              Modèle {TEMPLATES[resolveOwnSettings(store).template].shortLabel} · aperçu en direct
+    <View style={styles.screen}>
+      <View style={[styles.bar, { paddingTop: insets.top + 6 }]}>
+        <View style={styles.barRow}>
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text style={styles.kicker} numberOfLines={1}>
+              Ma boutique en ligne
             </Text>
+            <StatusBadge status={store.status} />
           </View>
-          <ChevronRight size={18} color={colors.textSecondary} />
-        </Pressable>
-      </Animated.View>
-
-      {store.status !== 'verified' && (
-        <Animated.View entering={FadeInDown.delay(60).duration(380)} style={styles.section}>
-          <Pressable onPress={() => router.push('/verification')} style={[styles.verifyCard, { backgroundColor: status.bg }]}>
-            <status.icon size={22} color={status.fg} strokeWidth={1.8} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.verifyTitle, { color: status.fg }]}>
-                {store.status === 'draft' ? 'Activez les ventes et paiements' : status.label}
-              </Text>
-              <Text style={styles.verifyText}>{store.status === 'rejected' && store.rejectionReason ? store.rejectionReason : status.message}</Text>
-            </View>
-            <ChevronRight size={18} color={status.fg} />
-          </Pressable>
-        </Animated.View>
-      )}
-
-      <View style={[styles.section, styles.kpis]}>
-        <Kpi icon={Wallet} label="Ventes (30 jours)" value={formatFCFA(stats?.revenue ?? 0)} delay={100} />
-        <Kpi icon={ReceiptText} label="Commandes (30 jours)" value={String(stats?.orders ?? 0)} delay={140} />
-        <Kpi icon={Eye} label="Vues de la vitrine" value={formatCount(stats?.views ?? views)} delay={180} />
-        <Kpi icon={Package} label="Produits en ligne" value={`${published}/${products.length}`} delay={220} />
-      </View>
-
-      {doneCount < checklist.length && (
-        <Animated.View entering={FadeInDown.delay(240).duration(380)} style={[styles.section, styles.card]}>
-          <View style={styles.cardHeader}>
-            <Text style={typography.h3}>Bien démarrer</Text>
-            <Text style={styles.progress}>
-              {doneCount}/{checklist.length}
-            </Text>
-          </View>
-          {checklist.map((c) => (
-            <ChecklistItem key={c.label} done={c.done} label={c.label} onPress={() => router.push(c.href)} />
-          ))}
-        </Animated.View>
-      )}
-
-      <View style={[styles.section, styles.quick]}>
-        <PressableScale onPress={() => router.push({ pathname: '/store/[id]', params: { id: store.slug } })} style={styles.quickItem}>
-          <StoreIcon size={20} color={colors.cognac} strokeWidth={1.7} />
-          <Text style={styles.quickText}>Voir ma vitrine</Text>
-        </PressableScale>
-        <PressableScale onPress={() => shareOnWhatsApp(storeShareMessage(store.name, store.slug))} style={styles.quickItem}>
-          <MessageCircle size={20} color={colors.cognac} strokeWidth={1.7} />
-          <Text style={styles.quickText}>WhatsApp</Text>
-        </PressableScale>
-        <PressableScale onPress={() => router.push('/seller/settings')} style={styles.quickItem}>
-          <Share2 size={20} color={colors.cognac} strokeWidth={1.7} />
-          <Text style={styles.quickText}>Mon lien</Text>
-        </PressableScale>
-      </View>
-
-      <View style={[styles.section, styles.card]}>
-        <View style={styles.cardHeader}>
-          <Text style={typography.h3}>Statistiques</Text>
-          <ChartColumn size={18} color={colors.textSecondary} strokeWidth={1.7} />
+          <PressableScale
+            onPress={() => {
+              haptics.light();
+              router.push('/customize');
+            }}
+            activeScale={0.94}
+            style={[styles.edit, narrow && styles.editNarrow]}
+            accessibilityRole="button"
+            accessibilityLabel="Modifier ma boutique"
+          >
+            <Paintbrush size={15} color={colors.white} strokeWidth={2} />
+            {!narrow && <Text style={styles.editText}>Modifier</Text>}
+          </PressableScale>
+          <SpaceSwitchPill to="buyer" />
         </View>
-        <Text style={styles.statsEmpty}>
-          Vos ventes et visites des 30 derniers jours s’afficheront ici dès vos premières commandes.
-        </Text>
+
+        {todo > 0 ? (
+          <Notice
+            icon={ReceiptText}
+            bg="#F6E8D6"
+            fg={colors.chocolate}
+            text={todo > 1 ? `${todo} commandes à traiter` : '1 commande à traiter'}
+            onPress={() => router.navigate('/seller/orders')}
+          />
+        ) : needsReview ? (
+          <Notice
+            icon={status.icon}
+            bg={status.bg}
+            fg={status.fg}
+            text={store.status === 'rejected' ? 'Des informations sont à corriger' : 'Faites vérifier la boutique pour vendre'}
+            onPress={() => router.push('/verification')}
+          />
+        ) : null}
       </View>
-    </ScrollView>
+
+      <StorefrontScreen id={store.slug} owner bottomInset={bottomSpace + (productCount > 0 ? 64 : 0)} />
+      {productCount > 0 && <AddProductFab />}
+    </View>
+  );
+}
+
+function Notice({ icon: Icon, bg, fg, text, onPress }: { icon: LucideIcon; bg: string; fg: string; text: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.notice, { backgroundColor: bg }, pressed && { opacity: 0.8 }]} accessibilityRole="button">
+      <Icon size={16} color={fg} strokeWidth={2} />
+      <Text style={[styles.noticeText, { color: fg }]} numberOfLines={1}>
+        {text}
+      </Text>
+      <ChevronRight size={16} color={fg} />
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: spacing.screen },
-  storeName: { fontFamily: fonts.bold, fontSize: 19, color: colors.text },
-  section: { marginHorizontal: spacing.screen, marginTop: spacing.lg },
-  addCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    padding: 18,
-    borderRadius: radii.xl,
-    backgroundColor: colors.buttonPrimary,
-    ...shadows.card,
+  bar: {
+    paddingHorizontal: 12,
+    paddingBottom: 10,
+    gap: 10,
+    backgroundColor: colors.background,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  addIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.caramel, alignItems: 'center', justifyContent: 'center' },
-  addPlus: { fontFamily: fonts.regular, fontSize: 30, lineHeight: 34, color: colors.white },
-  addTitle: { fontFamily: fonts.bold, fontSize: 17.5, color: colors.white },
-  addText: { fontFamily: fonts.regular, fontSize: 13, color: '#D9BFA3', marginTop: 2 },
-  customizeRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  customizeTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.text },
-  customizeText: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary, marginTop: 2 },
-  verifyCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: radii.lg },
-  verifyTitle: { fontFamily: fonts.bold, fontSize: 15 },
-  verifyText: { fontFamily: fonts.regular, fontSize: 13, color: '#4A433E', marginTop: 2, lineHeight: 18 },
-  kpis: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  kpi: {
-    width: '48.5%',
-    flexGrow: 1,
-    flexBasis: '45%',
-    padding: 14,
-    borderRadius: radii.lg,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    ...shadows.soft,
-  },
-  kpiIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.backgroundAlt, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  kpiValue: { fontFamily: fonts.bold, fontSize: 20, color: colors.text },
-  kpiLabel: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.textSecondary, marginTop: 2 },
-  card: { padding: 16, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
-  progress: { fontFamily: fonts.semibold, fontSize: 13, color: colors.caramel },
-  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
-  checkCircle: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: colors.sand, alignItems: 'center', justifyContent: 'center' },
-  checkCircleDone: { backgroundColor: colors.caramel, borderColor: colors.caramel },
-  checkLabel: { flex: 1, fontFamily: fonts.medium, fontSize: 14.5, color: colors.text },
-  checkLabelDone: { color: colors.textMuted, textDecorationLine: 'line-through' },
-  quick: { flexDirection: 'row', gap: 10 },
-  quickItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    borderRadius: radii.lg,
-    backgroundColor: colors.backgroundAlt,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  quickText: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.chocolate },
-  statsEmpty: { ...typography.caption, fontSize: 13.5, lineHeight: 19 },
+  barRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  kicker: { fontFamily: fonts.medium, fontSize: 12, color: colors.textSecondary },
+  edit: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: 13, borderRadius: radii.pill, backgroundColor: colors.buttonPrimary },
+  editNarrow: { width: 36, paddingHorizontal: 0, justifyContent: 'center' },
+  editText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.white },
+  notice: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, height: 40, borderRadius: radii.md },
+  noticeText: { flex: 1, fontFamily: fonts.semibold, fontSize: 13.5 },
 });

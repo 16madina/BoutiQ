@@ -7,15 +7,19 @@ import { fetchMyOrders, type Order } from '@/api/account';
 import { EmptyState } from '@/components/EmptyState';
 import { useTabBarSpace } from '@/components/FloatingTabBar';
 import { OrderCard } from '@/components/OrderCard';
-import { ScreenHeader } from '@/components/ScreenHeader';
+import { NotificationsList } from '@/components/NotificationsList';
+import { TitleTabs } from '@/components/TitleTabs';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { colors, fonts, radii, spacing } from '@/theme';
 
-/** Mes commandes : suivi en temps réel depuis Supabase. */
+/** Onglet « Commandes » : mes commandes, et « Activité » (suivi des commandes, nouveautés des boutiques suivies). */
 export default function OrdersScreen() {
   const bottomSpace = useTabBarSpace();
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<'orders' | 'activity'>('orders');
+  const unread = useUnreadNotifications();
 
   const load = useCallback(async () => {
     try {
@@ -35,7 +39,18 @@ export default function OrdersScreen() {
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title="Commandes" back={false} large />
+      <TitleTabs
+        tabs={[
+          { id: 'orders', label: 'Commandes' },
+          { id: 'activity', label: 'Activité', badge: view === 'activity' ? 0 : unread },
+        ]}
+        value={view}
+        onChange={setView}
+      />
+      {view === 'activity' ? (
+        <NotificationsList bottomInset={bottomSpace} />
+      ) : (
+        <>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {orders == null ? (
         <ActivityIndicator color={colors.caramel} style={{ marginTop: 40 }} />
@@ -67,6 +82,8 @@ export default function OrdersScreen() {
           }
           renderItem={({ item }) => <OrderCard order={item} />}
         />
+      )}
+        </>
       )}
     </View>
   );

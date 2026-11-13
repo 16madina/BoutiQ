@@ -20,6 +20,8 @@ import { syncRemoteCatalog } from '@/api/remoteCatalog';
 import { pullShopData, startShopSync } from '@/api/shopSync';
 import { colors } from '@/theme';
 import { isPhonePreview, PREVIEW_INSETS } from '@/utils/devicePreview';
+import { useShop } from '@/store/useShop';
+import { restoreAccountSession } from '@/api/authAccount';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
@@ -38,14 +40,18 @@ export default function RootLayout() {
     if (loaded || fontError) SplashScreen.hideAsync().catch(() => {});
   }, [loaded, fontError]);
 
-  // Catalogue réel (Supabase) chargé en arrière-plan ; la démo reste visible en attendant.
+  // Catalogue réel (Supabase) chargé en arrière-plan.
   useEffect(() => {
     // Favoris, abonnements et profil du compte : relus une fois les boutiques connues.
     syncRemoteCatalog().then(() => {
+      // Anciens produits de démonstration restés dans le panier ou les favoris de cet appareil.
+      useShop.getState().purgeDemo();
       pullShopData().catch(() => {});
       pullProfile().catch(() => {});
     });
     startShopSync();
+    // Compte confirmé hors de l'app (lien reçu par e-mail) : la connexion est retrouvée au démarrage.
+    restoreAccountSession().catch(() => {});
   }, []);
 
   if (!loaded && !fontError) return null;
@@ -76,8 +82,11 @@ export default function RootLayout() {
         <Stack.Screen name="customize" options={{ gestureEnabled: false }} />
         <Stack.Screen name="checkout" />
         <Stack.Screen name="order/[id]" />
+        <Stack.Screen name="chat/[id]" />
         <Stack.Screen name="profile" />
         <Stack.Screen name="verification" />
+        <Stack.Screen name="moderation" />
+        <Stack.Screen name="promo-codes" />
         <Stack.Screen
           name="select"
           options={{

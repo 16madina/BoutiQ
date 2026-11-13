@@ -1,28 +1,40 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { MessageSquareText, ShieldCheck, X } from 'lucide-react-native';
+import { MailCheck, MessageSquareText, ShieldCheck, X } from 'lucide-react-native';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, FadeInRight, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { checkEmailConfirmed, isEmail, MIN_PASSWORD, resendConfirmation, signInWithEmail, signUpWithEmail } from '@/api/authAccount';
 import { BrandLogo } from '@/components/BrandLogo';
 import { CircleIconButton } from '@/components/CircleIconButton';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { FormField, SelectField } from '@/components/seller/FormField';
-import { AUTH_DEMO_MODE, COUNTRIES, DEMO_OTP_CODE, useAuth, type CountryCode } from '@/store/useAuth';
+import { AUTH_DEMO_MODE, COUNTRIES, DEMO_OTP_CODE, SMS_AUTH_AVAILABLE, useAuth, type CountryCode } from '@/store/useAuth';
 import { usePicker, usePickerResult } from '@/store/usePicker';
 import { colors, fonts, radii, spacing, typography } from '@/theme';
 import { haptics } from '@/utils/haptics';
 
 const RESEND_SECONDS = 30;
 
-/** Connexion par SMS : numéro → code à 6 chiffres. */
+/**
+ * Connexion : par e-mail et mot de passe (toujours), et par SMS quand un fournisseur est configuré.
+ * Créer un compte garde tout ce qui a déjà été fait sur l'appareil (boutique, commandes, favoris).
+ */
 export default function AuthScreen() {
   const { next } = useLocalSearchParams<{ next?: string }>();
   const insets = useSafeAreaInsets();
   const requestOtp = useAuth((s) => s.requestOtp);
   const verifyOtp = useAuth((s) => s.verifyOtp);
   const openPicker = usePicker((s) => s.open);
+
+  // E-mail et mot de passe
+  const [method, setMethod] = useState<'email' | 'sms'>('email');
+  const [mode, setMode] = useState<'signup' | 'signin'>('signup');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailStep, setEmailStep] = useState<'form' | 'confirm'>('form');
+  const [info, setInfo] = useState<string | null>(null);
 
   const [countryCode, setCountryCode] = useState<CountryCode>('CI');
   const [local, setLocal] = useState('');
@@ -91,20 +103,179 @@ export default function AuthScreen() {
     router.replace((next as Href) ?? '/account');
   };
 
+  const done = () => {
+    haptics.success();
+    router.replace((next as Href) ?? '/account');
+  };
+
+  const submitEmail = async () => {
+    if (loading) return;
+    if (!isEmail(email)) return setError('Entrez une adresse e-mail valide.');
+    if (password.length < MIN_PASSWORD) return setError(`Le mot de passe doit faire au moins ${MIN_PASSWORD} caractères.`);
+    setLoading(true);
+    setError(null);
+    setInfo(null);
+    try {
+      if (mode === 'signin') {
+        await signInWithEmail(email, password);
+        done();
+      } else if ((await signUpWithEmail(email, password)) === 'done') {
+        done();
+      } else {
+        haptics.light();
+        setEmailStep('confirm');
+      }
+    } catch (e) {
+      haptics.medium();
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmEmail = async () => {
+    if (loading) return;
+    setLoading(true);
+    setError(null);
+    setInfo(null);
+    const ok = await checkEmailConfirmed(email).catch(() => false);
+    setLoading(false);
+    if (ok) done();
+    else setError('Pas encore confirmé. Ouvrez l’e-mail reçu, touchez le lien, puis revenez ici.');
+  };
+
+  const resend = async () => {
+    setError(null);
+    try {
+      await resendConfirmation(email);
+      setInfo('E-mail renvoyé. Pensez à regarder dans les courriers indésirables.');
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const back = () => {
+    if (method === 'sms' && step === 'code') setStep('phone');
+    else if (method === 'email' && emailStep === 'confirm') setEmailStep('form');
+    else router.back();
+  };
+
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[styles.top, { paddingTop: insets.top + 8 }]}>
-        <CircleIconButton size={40} onPress={() => (step === 'code' ? setStep('phone') : router.back())} accessibilityLabel="Retour">
+        <CircleIconButton size={40} onPress={back} accessibilityLabel="Retour">
           <X size={20} strokeWidth={1.8} color={colors.text} />
         </CircleIconButton>
       </View>
 
-      <View style={styles.body}>
+      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 40 }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.duration(350)}>
           <BrandLogo size={40} showTagline={false} />
         </Animated.View>
 
-        {step === 'phone' ? (
+        {SMS_AUTH_AVAILABLE && emailStep === 'form' && step === 'phone' && (
+          <View style={styles.methods} accessibilityRole="tablist">
+            {(['email', 'sms'] as const).map((m) => {
+              const on = m === method;
+              return (
+                <Pressable
+                  key={m}
+                  onPress={() => {
+                    setMethod(m);
+                    setError(null);
+                  }}
+                  style={[styles.method, on && styles.methodOn]}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: on }}
+                >
+                  <Text style={[styles.methodText, on && { color: colors.white }]}>{m === 'email' ? 'E-mail' : 'Téléphone (SMS)'}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
+        {method === 'email' && emailStep === 'confirm' ? (
+          <Animated.View key="confirm" entering={FadeInRight.duration(320)} style={{ gap: spacing.xl }}>
+            <View style={styles.mailIcon}>
+              <MailCheck size={30} color={colors.cognac} strokeWidth={1.6} />
+            </View>
+            <View>
+              <Text style={typography.h1}>Confirmez votre e-mail</Text>
+              <Text style={styles.subtitle}>
+                Nous avons envoyé un message à <Text style={{ fontFamily: fonts.semibold, color: colors.text }}>{email.trim()}</Text>. Ouvrez-le, touchez le lien, puis revenez ici.
+              </Text>
+            </View>
+            {error ? <Text style={[styles.error, { marginTop: 0, textAlign: 'left' }]}>{error}</Text> : null}
+            {info ? <Text style={styles.info}>{info}</Text> : null}
+            <PrimaryButton label={loading ? 'Vérification…' : 'J’ai confirmé mon e-mail'} onPress={confirmEmail} disabled={loading} />
+            <Text onPress={resend} style={styles.resend} accessibilityRole="button">
+              Renvoyer l’e-mail
+            </Text>
+          </Animated.View>
+        ) : method === 'email' ? (
+          <Animated.View key={`email-${mode}`} entering={FadeInDown.duration(350)} style={{ gap: spacing.xl }}>
+            <View>
+              <Text style={typography.h1}>{mode === 'signup' ? 'Créer mon compte' : 'Connexion'}</Text>
+              <Text style={styles.subtitle}>
+                {mode === 'signup'
+                  ? 'Votre boutique, vos commandes et vos favoris sont gardés et vous suivent sur tous vos appareils.'
+                  : 'Retrouvez votre boutique, vos commandes et vos favoris.'}
+              </Text>
+            </View>
+            <FormField
+              label="Adresse e-mail"
+              value={email}
+              onChangeText={(t) => {
+                setEmail(t);
+                setError(null);
+              }}
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder="nom@exemple.com"
+              returnKeyType="next"
+            />
+            <FormField
+              label="Mot de passe"
+              hint={mode === 'signup' ? `Au moins ${MIN_PASSWORD} caractères.` : undefined}
+              value={password}
+              onChangeText={(t) => {
+                setPassword(t);
+                setError(null);
+              }}
+              secureTextEntry
+              textContentType={mode === 'signup' ? 'newPassword' : 'password'}
+              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+              autoCapitalize="none"
+              autoCorrect={false}
+              error={error}
+              onSubmitEditing={submitEmail}
+              returnKeyType="go"
+            />
+            <PrimaryButton
+              label={loading ? 'Un instant…' : mode === 'signup' ? 'Créer mon compte' : 'Me connecter'}
+              onPress={submitEmail}
+              disabled={loading || !email.trim() || !password}
+            />
+            <Text
+              onPress={() => {
+                setMode(mode === 'signup' ? 'signin' : 'signup');
+                setError(null);
+              }}
+              style={styles.resend}
+              accessibilityRole="button"
+            >
+              {mode === 'signup' ? 'J’ai déjà un compte' : 'Créer un compte'}
+            </Text>
+            <View style={styles.reassure}>
+              <ShieldCheck size={16} color={colors.cognac} strokeWidth={1.8} />
+              <Text style={styles.reassureText}>Votre e-mail n’est jamais affiché publiquement.</Text>
+            </View>
+          </Animated.View>
+        ) : step === 'phone' ? (
           <Animated.View key="phone" entering={FadeInDown.duration(350)} style={{ gap: spacing.xl }}>
             <View>
               <Text style={typography.h1}>Connexion</Text>
@@ -199,7 +370,7 @@ export default function AuthScreen() {
             </Text>
           </Animated.View>
         )}
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -231,5 +402,11 @@ const styles = StyleSheet.create({
   codeDigit: { fontFamily: fonts.bold, fontSize: 24, color: colors.text },
   hiddenInput: { position: 'absolute', opacity: 0, width: 1, height: 1 },
   error: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.promo, textAlign: 'center', marginTop: -8 },
+  methods: { flexDirection: 'row', gap: 8, padding: 4, borderRadius: radii.pill, backgroundColor: colors.backgroundAlt, alignSelf: 'stretch' },
+  method: { flex: 1, height: 40, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' },
+  methodOn: { backgroundColor: colors.buttonPrimary },
+  methodText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
+  mailIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#F6E8D6', alignItems: 'center', justifyContent: 'center' },
+  info: { fontFamily: fonts.medium, fontSize: 13.5, color: '#2F5A2B', padding: 12, borderRadius: radii.md, backgroundColor: '#E7EFDF', lineHeight: 19 },
   resend: { fontFamily: fonts.medium, fontSize: 14.5, color: colors.cognac, textAlign: 'center' },
 });

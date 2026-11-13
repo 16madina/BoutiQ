@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import { deviceStorage } from '@/store/persist';
+import type { LocalImage } from '@/types/seller';
 
 /** Profil du client : sert à saluer et à préremplir la livraison. */
 export interface Profile {
@@ -9,6 +10,10 @@ export interface Profile {
   phone: string;
   city: string;
   address: string;
+  /** Photo de profil (gardée sur l'appareil, puis envoyée en ligne). */
+  avatar?: LocalImage;
+  /** Date de création du compte (« Membre depuis… »). */
+  memberSince?: string;
 }
 
 interface ProfileState extends Profile {

@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { ArrowDown, ArrowUp, Check, ChevronLeft, Eye, Package, RotateCcw, Star } from 'lucide-react-native';
 import { useMemo, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
@@ -55,7 +55,9 @@ function Editor({ saved }: { saved: SellerStore }) {
   const updateStore = useSeller((s) => s.updateStore);
 
   const [draft, setDraft] = useState<SellerStore>(saved);
-  const [tab, setTab] = useState<Tab>('modele');
+  // « Ma boutique » ouvre directement la bonne rubrique (ex. /customize?tab=identite).
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<Tab>(TABS.some((t) => t.id === params.tab) ? (params.tab as Tab) : 'modele');
   const [leaving, setLeaving] = useState(false);
 
   const settings = resolveOwnSettings(draft, details);

@@ -1,6 +1,6 @@
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
-import { House, LayoutGrid, Package, Store, UserRound, type LucideIcon } from 'lucide-react-native';
+import { House, LayoutGrid, MessageCircle, Package, UserRound, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -13,8 +13,8 @@ import { haptics } from '@/utils/haptics';
 const ICONS: Record<string, LucideIcon> = {
   index: House,
   categories: LayoutGrid,
-  stores: Store,
   orders: Package,
+  messages: MessageCircle,
   account: UserRound,
 };
 
@@ -39,7 +39,8 @@ export function FloatingTabBar({
   emitter,
   navigateToTab,
   icons = ICONS,
-}: BottomTabBarProps & { icons?: Record<string, LucideIcon> }) {
+  badges,
+}: BottomTabBarProps & { icons?: Record<string, LucideIcon>; /** Nombre à afficher sur un onglet (ex. commandes à traiter). */ badges?: Record<string, number> }) {
   const bottom = useTabBarBottomOffset();
   const [barWidth, setBarWidth] = useState(0);
 
@@ -94,11 +95,16 @@ export function FloatingTabBar({
             onLongPress={() => emitter.emit({ type: 'tabLongPress', target: route.key })}
             accessibilityRole="tab"
             accessibilityState={{ selected: focused }}
-            accessibilityLabel={label}
+            accessibilityLabel={badges?.[route.name] ? `${label}, ${badges[route.name]} à traiter` : label}
             style={styles.tab}
           >
             <View>
               <Icon size={23} strokeWidth={focused ? 2 : 1.6} color={color} />
+              {badges?.[route.name] ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{badges[route.name] > 9 ? '9+' : badges[route.name]}</Text>
+                </View>
+              ) : null}
             </View>
             <Text style={[styles.label, { color }]} numberOfLines={1}>
               {label}
@@ -132,4 +138,6 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, height: '100%', alignItems: 'center', justifyContent: 'center', gap: 3 },
   label: { fontFamily: fonts.medium, fontSize: 10.5, letterSpacing: -0.2 },
+  badge: { position: 'absolute', top: -5, right: -10, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.promo, borderWidth: 1.5, borderColor: colors.white },
+  badgeText: { fontFamily: fonts.bold, fontSize: 10, lineHeight: 12, color: colors.white },
 });

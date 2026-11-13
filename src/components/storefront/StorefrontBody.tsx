@@ -32,6 +32,8 @@ interface Props {
   preview?: boolean;
   /** « Voir tout » d'une section : mène au catalogue (filtré sur les promotions pour « deals »). */
   onSeeAll?: (section: 'featured' | 'new' | 'deals') => void;
+  /** Position de « À propos » dans les sections (menu de la vitrine « site web »). */
+  onAboutLayout?: (y: number) => void;
 }
 
 const openProduct = (p: Product) => router.push({ pathname: '/product/[id]', params: { id: p.id } });
@@ -40,14 +42,15 @@ const openProduct = (p: Product) => router.push({ pathname: '/product/[id]', par
  * Sections de la vitrine, dans l'ordre défini par le modèle.
  * Utilisé par la vitrine publique ET par l'aperçu en direct du vendeur.
  */
-export function StorefrontBody({ sf, sections, width, filtering, selectedCollectionId, onSelectCollection, onContact, preview, onSeeAll }: Props) {
+export function StorefrontBody({ sf, sections, width, filtering, selectedCollectionId, onSelectCollection, onContact, preview, onSeeAll, onAboutLayout }: Props) {
   const { template, palette, settings } = sf;
   const empty = sections.total === 0;
 
   const render = (id: StorefrontSectionId): ReactNode => {
     switch (id) {
       case 'promo':
-        return !filtering && settings.promoMessage ? <PromoBand key={id} sf={sf} /> : null;
+        // Vitrine « site web » : le message est déjà dans la barre d'annonce, tout en haut.
+        return !filtering && settings.promoMessage && template.heroLayout !== 'site' ? <PromoBand key={id} sf={sf} /> : null;
       case 'collections':
         return sf.collections.length > 0 ? (
           <View key={id}>
@@ -84,7 +87,11 @@ export function StorefrontBody({ sf, sections, width, filtering, selectedCollect
           </Animated.View>
         ) : null;
       case 'about':
-        return !filtering ? <AboutStore key={id} sf={sf} onContact={onContact} /> : null;
+        return !filtering ? (
+          <View key={id} onLayout={onAboutLayout && ((e) => onAboutLayout(e.nativeEvent.layout.y))}>
+            <AboutStore sf={sf} onContact={onContact} />
+          </View>
+        ) : null;
     }
   };
 

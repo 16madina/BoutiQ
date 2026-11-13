@@ -52,6 +52,9 @@ export type StorefrontSectionId = 'promo' | 'collections' | 'featured' | 'new' |
 export type SectionCopy = Record<'featured' | 'new' | 'deals' | 'collections' | 'catalog', [string, string]>;
 
 /** Présentation d'un modèle : tout ce qui change d'un modèle à l'autre. */
+/** Mise en scène de la vitrine « site web » (une par modèle). */
+export type SiteStyle = 'fresh' | 'editorial' | 'fashion' | 'soft' | 'tech' | 'warm';
+
 export interface StorefrontTemplate {
   id: StorefrontTemplateId;
   label: string;
@@ -74,7 +77,7 @@ export interface StorefrontTemplate {
    * inset = photo encadrée en carte, puis identité et services (Alimentation) ;
    * banner = barre claire centrée + photo d'ambiance (Généraliste).
    */
-  heroLayout: 'collage' | 'overlay' | 'centered' | 'stacked' | 'inset' | 'banner';
+  heroLayout: 'collage' | 'overlay' | 'centered' | 'stacked' | 'inset' | 'banner' | 'site';
   /** Présentation des collections (rayons). */
   collectionShape: 'photo-card' | 'emoji-circle' | 'round' | 'square' | 'tile' | 'emoji-grid';
   /**
@@ -86,6 +89,12 @@ export interface StorefrontTemplate {
   featuredStyle: 'editorial' | 'grid' | 'spotlight' | 'rail';
   /** Titre affiché sur la bannière quand le vendeur n'a pas écrit d'accroche. */
   heroTitle: string;
+  /** Avec heroLayout « site » : la mise en scène propre au modèle. */
+  siteStyle?: SiteStyle;
+  /** Ancienne présentation (vignette du modèle ; la remettre dans heroLayout pour revenir en arrière). */
+  legacyLayout?: StorefrontTemplate['heroLayout'];
+  /** Photos de bannière montrées tant que le vendeur n'a pas ajouté les siennes. */
+  defaultHeroPhotoIds?: string[];
   /** Bouton de la bannière (mène au catalogue). */
   heroCta: string;
   /** Petits surtitres au-dessus des titres de sections. */

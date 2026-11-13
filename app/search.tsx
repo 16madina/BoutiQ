@@ -5,7 +5,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { getCategory, searchCategories, searchStores } from '@/api/catalog';
+import { DEMO_DATA, getCategory, searchCategories, searchStores } from '@/api/catalog';
+import { remoteStores, useRemoteCatalog } from '@/api/remoteCatalog';
 import { CircleIconButton } from '@/components/CircleIconButton';
 import { EmptyState } from '@/components/EmptyState';
 import { ProductMasonryGrid } from '@/components/ProductMasonryGrid';
@@ -75,6 +76,13 @@ export default function SearchScreen() {
 
   const browsing = !!params.sort || !!params.promo || visual;
   const idle = !query && !category && !browsing && !filters.onlyPromo && filters.priceRange === 'all';
+  // Boutiques réelles (vérifiées d'abord) ; les boutiques d'exemple seulement sans Supabase.
+  const syncedAt = useRemoteCatalog((s) => s.syncedAt);
+  const suggestedStores = useMemo<Store[]>(
+    () => (DEMO_DATA ? STORES : [...remoteStores()].sort((a, b) => Number(!!b.verified) - Number(!!a.verified))).slice(0, 5),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [syncedAt],
+  );
 
   const productQuery = useMemo<ProductQuery>(() => {
     const range = PRICE_RANGES[filters.priceRange];
@@ -167,29 +175,37 @@ export default function SearchScreen() {
 
       {idle ? (
         <Animated.ScrollView entering={FadeIn.duration(200)} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.idle}>
-          <Text style={styles.sectionLabel}>Recherches populaires</Text>
-          <View style={styles.wrap}>
-            {POPULAR_SEARCHES.map((s) => (
-              <Pressable key={s} onPress={() => setText(s)} style={styles.popular}>
-                <TrendingUp size={14} color={colors.caramel} strokeWidth={2} />
-                <Text style={styles.chipText}>{s}</Text>
-              </Pressable>
-            ))}
-          </View>
+          {DEMO_DATA && (
+            <>
+              <Text style={styles.sectionLabel}>Recherches populaires</Text>
+              <View style={[styles.wrap, { marginBottom: spacing.xxl }]}>
+                {POPULAR_SEARCHES.map((s) => (
+                  <Pressable key={s} onPress={() => setText(s)} style={styles.popular}>
+                    <TrendingUp size={14} color={colors.caramel} strokeWidth={2} />
+                    <Text style={styles.chipText}>{s}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </>
+          )}
 
-          <Text style={[styles.sectionLabel, { marginTop: spacing.xxl }]}>Catégories</Text>
+          <Text style={styles.sectionLabel}>Catégories</Text>
           <View style={styles.wrap}>
             {CATEGORIES.map((c) => (
               <Chip key={c.id} label={`${c.emoji ?? ''} ${c.name}`.trim()} onPress={() => setCategory(c.id)} />
             ))}
           </View>
 
-          <Text style={[styles.sectionLabel, { marginTop: spacing.xxl }]}>Boutiques populaires</Text>
-          <View style={{ gap: 10 }}>
-            {STORES.slice(0, 5).map((s) => (
-              <StorePill key={s.id} store={s} />
-            ))}
-          </View>
+          {suggestedStores.length > 0 && (
+            <>
+              <Text style={[styles.sectionLabel, { marginTop: spacing.xxl }]}>Boutiques à découvrir</Text>
+              <View style={{ gap: 10 }}>
+                {suggestedStores.map((s) => (
+                  <StorePill key={s.id} store={s} />
+                ))}
+              </View>
+            </>
+          )}
 
           <Pressable onPress={startVisualSearch} style={styles.visualCta}>
             <Camera size={20} color={colors.cognac} strokeWidth={1.7} />

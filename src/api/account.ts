@@ -6,11 +6,13 @@
 import { getStore, peekProduct } from '@/api/catalog';
 import { remoteStores } from '@/api/remoteCatalog';
 import { toSyncError } from '@/api/sellerSync';
+import { removeImages, uploadImage } from '@/lib/media';
 import { currentUser, ensureSession } from '@/lib/session';
 import { storeMediaUrl, supabase } from '@/lib/supabase';
 import { useProfile, type Profile } from '@/store/useProfile';
 import type { CartLine } from '@/store/useShop';
 import type { Database } from '@/types/database';
+import type { LocalImage } from '@/types/seller';
 import { productImageUri } from '@/utils/images';
 
 export type OrderStatus = Database['public']['Enums']['order_status'];
@@ -43,7 +45,8 @@ export async function pullProfile() {
   if (!supabase) return;
   const user = await currentUser();
   if (!user) return;
-  const { data } = await supabase.from('profiles').select('full_name, phone, city, address').eq('id', user.id).maybeSingle();
+  useProfile.getState().update({ memberSince: user.created_at });
+  const { data } = await supabase.from('profiles').select('full_name, phone, city, address, avatar_path').eq('id', user.id).maybeSingle();
   if (!data) return;
   const local = useProfile.getState();
   // Les champs saisis sur l'appareil gardent la priorité s'ils ne sont pas encore envoyés.
@@ -52,7 +55,30 @@ export async function pullProfile() {
     phone: local.phone || data.phone || '',
     city: local.city || data.city || '',
     address: local.address || data.address || '',
+    // Photo choisie sur un autre appareil : on affiche sa copie en ligne.
+    avatar:
+      local.avatar && (!data.avatar_path || local.avatar.remotePath === data.avatar_path || !local.avatar.remotePath)
+        ? local.avatar
+        : data.avatar_path
+          ? { uri: storeMediaUrl(data.avatar_path) ?? '', width: 600, height: 600, remotePath: data.avatar_path }
+          : undefined,
   });
+}
+
+/** Photo de profil : affichée tout de suite, puis envoyée dans le dossier personnel du compte. */
+export async function saveAvatar(img: LocalImage) {
+  const previous = useProfile.getState().avatar?.remotePath;
+  useProfile.getState().update({ avatar: img });
+  if (!supabase) return;
+  try {
+    const user = await ensureSession();
+    const uploaded = await uploadImage(img, `users/${user.id}`, 600);
+    ok(await supabase.from('profiles').update({ avatar_path: uploaded.remotePath }).eq('id', user.id));
+    useProfile.getState().update({ avatar: uploaded });
+    if (previous && previous !== uploaded.remotePath) removeImages([previous]).catch(() => {});
+  } catch (e) {
+    throw toSyncError(e);
+  }
 }
 
 export async function saveProfile(patch: Partial<Profile>) {
@@ -97,7 +123,11 @@ export interface Order {
   storeName: string;
   storeSlug?: string;
   status: OrderStatus;
+  /** Montant à payer, réduction déjà retirée. */
   total: number;
+  /** Réduction obtenue avec un code promo (0 sinon). */
+  discount: number;
+  promoCode?: string;
   commission: number;
   paymentMethod: PaymentMethod;
   mobileMoney?: MobileMoney;
@@ -127,6 +157,8 @@ function toOrder(r: OrderRow, userId: string, storeOwnerOf: Set<string>): Order 
     storeSlug: store?.id,
     status: r.status,
     total: r.total,
+    discount: r.discount ?? 0,
+    promoCode: r.promo_code ?? undefined,
     commission: r.commission,
     paymentMethod: r.payment_method,
     mobileMoney: (r.mobile_money_provider as MobileMoney) ?? undefined,
@@ -242,7 +274,15 @@ export interface DeliveryInfo {
  * Passe une commande par boutique « commandable ». Les prix et le total sont
  * recalculés par Supabase (place_order) ; le stock y est réservé.
  */
-export async function placeOrders(groups: CartGroup[], delivery: DeliveryInfo, payment: PaymentMethod, provider: MobileMoney | undefined, note: string) {
+export async function placeOrders(
+  groups: CartGroup[],
+  delivery: DeliveryInfo,
+  payment: PaymentMethod,
+  provider: MobileMoney | undefined,
+  note: string,
+  /** Code promo par boutique (clé : storeKey du groupe). La base revérifie chaque code. */
+  promoCodes: Record<string, string> = {},
+) {
   if (!supabase) throw new Error('Commande en ligne indisponible sur cette version.');
   await ensureSession();
   const created: string[] = [];
@@ -255,6 +295,7 @@ export async function placeOrders(groups: CartGroup[], delivery: DeliveryInfo, p
       p_payment: payment,
       p_provider: provider,
       p_note: note || undefined,
+      p_promo_code: promoCodes[g.storeKey] || undefined,
     });
     if (error) {
       // Messages de la base (« Stock insuffisant pour … ») : déjà rédigés pour le client.

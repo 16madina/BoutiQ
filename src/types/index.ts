@@ -48,6 +48,8 @@ export interface Product {
   photoId: string;
   /** Photo locale publiée par un vendeur (prioritaire sur photoId) */
   imageUri?: string;
+  /** Toutes les photos du produit, la principale en premier (produits des vendeurs). */
+  imageUris?: string[];
   /** false tant que la boutique n'est pas vérifiée */
   salesEnabled?: boolean;
   /** Collection de la boutique (produits vendeurs) */

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+import { isDemoProduct } from '@/api/catalog';
 import { deviceStorage } from '@/store/persist';
 
 import type { SortOption } from '@/types';
@@ -33,11 +34,16 @@ interface ShopState {
   favorites: Record<string, true>;
   cart: CartLine[];
   followedStores: Record<string, true>;
+  /** Codes promo activés par le client, par boutique : repris au moment de commander. */
+  promoCodes: Record<string, string>;
   filters: SearchFilters;
+  setPromoCode: (storeKey: string, code: string | null) => void;
   toggleFavorite: (productId: string) => boolean;
   addToCart: (productId: string, size?: string, variant?: string) => void;
   setQuantity: (productId: string, quantity: number, size?: string, variant?: string) => void;
   removeFromCart: (productId: string, size?: string, variant?: string) => void;
+  /** Retire du panier et des favoris les anciens produits de démonstration. */
+  purgeDemo: () => void;
   /** Retire les lignes commandées (les autres restent dans le panier). */
   removeLines: (lines: CartLine[]) => void;
   clearCart: () => void;
@@ -62,7 +68,16 @@ export const useShop = create<ShopState>()(
   favorites: {},
   cart: [],
   followedStores: {},
+  promoCodes: {},
   filters: DEFAULT_FILTERS,
+
+  setPromoCode: (storeKey, code) =>
+    set((s) => {
+      const promoCodes = { ...s.promoCodes };
+      if (code) promoCodes[storeKey] = code.trim().toUpperCase();
+      else delete promoCodes[storeKey];
+      return { promoCodes };
+    }),
 
   toggleFavorite: (productId) => {
     const isFav = !!get().favorites[productId];
@@ -75,8 +90,18 @@ export const useShop = create<ShopState>()(
     return !isFav;
   },
 
+  purgeDemo: () =>
+    set((s) => {
+      const cart = s.cart.filter((l) => !isDemoProduct(l.productId));
+      const favorites = Object.fromEntries(Object.entries(s.favorites).filter(([id]) => !isDemoProduct(id))) as Record<string, true>;
+      const changed = cart.length !== s.cart.length || Object.keys(favorites).length !== Object.keys(s.favorites).length;
+      return changed ? { cart, favorites } : s;
+    }),
+
   addToCart: (productId, size, variant) =>
     set((s) => {
+      // Les produits d'exemple (aperçu des modèles de vitrine) ne se commandent pas.
+      if (isDemoProduct(productId)) return s;
       const existing = s.cart.find((l) => sameLine(l, productId, size, variant));
       if (existing) {
         return { cart: s.cart.map((l) => (l === existing ? { ...l, quantity: Math.min(l.quantity + 1, 99) } : l)) };
@@ -121,7 +146,7 @@ export const useShop = create<ShopState>()(
       name: 'boutiq-shop',
       storage: deviceStorage,
       // Les filtres de recherche repartent à zéro à chaque ouverture.
-      partialize: (s) => ({ favorites: s.favorites, cart: s.cart, followedStores: s.followedStores }),
+      partialize: (s) => ({ favorites: s.favorites, cart: s.cart, followedStores: s.followedStores, promoCodes: s.promoCodes }),
     },
   ),
 );

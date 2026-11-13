@@ -138,6 +138,7 @@ export async function syncRemoteCatalog(): Promise<void> {
         collection: p.collection_id ? collectionName.get(p.collection_id) : undefined,
         photoId: '',
         imageUri: storeMediaUrl(cover.path),
+        imageUris: images.map((img) => storeMediaUrl(img.path)).filter((u): u is string => !!u),
         aspect: Math.min(Math.max(cover.height / cover.width, 0.75), 1.45),
         rating: 0,
         reviewsCount: 0,

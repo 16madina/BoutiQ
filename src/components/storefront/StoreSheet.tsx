@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, fonts, radii, spacing } from '@/theme';
@@ -18,7 +18,7 @@ export function StoreSheet({ visible, title, subtitle, onClose, children, footer
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <View style={styles.root}>
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.scrim} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer" />
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]} accessibilityViewIsModal>
           <View style={styles.grabber} />
@@ -28,12 +28,12 @@ export function StoreSheet({ visible, title, subtitle, onClose, children, footer
             </Text>
             {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
           </View>
-          <ScrollView bounces={false} contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+          <ScrollView bounces={false} contentContainerStyle={styles.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {children}
           </ScrollView>
           {footer ? <View style={styles.footer}>{footer}</View> : null}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

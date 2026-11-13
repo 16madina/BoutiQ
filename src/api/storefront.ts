@@ -7,7 +7,7 @@
  */
 import { getStore, storefrontProducts } from '@/api/catalog';
 import { remoteCollections, remoteHeroImages, remoteStorefront } from '@/api/remoteCatalog';
-import { toPublicProduct, toPublicStore } from '@/api/sellerCatalog';
+import { displayUri, toPublicProduct, toPublicStore } from '@/api/sellerCatalog';
 import { storeUrl } from '@/config/links';
 import { DEMO_STOREFRONTS } from '@/data/storefronts';
 import { buildPalette, normalizeTemplateId, TEMPLATES, templateForCategory } from '@/storefront/templates';
@@ -63,7 +63,8 @@ function finish(
     settings,
     template,
     palette: buildPalette(settings.accentColor, template.defaultAccent),
-    heroImages,
+    // Pas encore de photo du vendeur : belles photos du modèle, jamais une bannière vide.
+    heroImages: heroImages.length ? heroImages : (template.defaultHeroPhotoIds ?? []).map((photoId) => ({ photoId })),
     collections,
     products,
     categories: [...new Set(products.map((p) => p.categoryId))],
@@ -107,7 +108,7 @@ export function buildOwnStorefront(store: SellerStore, details: SellerDetails | 
     // Une collection vide n'est jamais montrée aux clients.
     .filter((c) => c.count > 0);
   const banners = store.banners?.length ? store.banners : store.banner ? [store.banner] : [];
-  return finish(toPublicStore(store), resolveOwnSettings(store, details), banners.map((b) => ({ uri: b.uri })), collections, products, true);
+  return finish(toPublicStore(store), resolveOwnSettings(store, details), banners.map((b) => ({ uri: displayUri(b) })), collections, products, true);
 }
 
 export function getStorefront(storeId: string): Storefront | undefined {

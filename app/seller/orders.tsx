@@ -10,14 +10,16 @@ import { OrderCard } from '@/components/OrderCard';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { shareOnWhatsApp, storeShareMessage } from '@/config/links';
 import { useSeller } from '@/store/useSeller';
+import { useSellerOrders } from '@/store/useSellerOrders';
 import { colors, fonts, radii, spacing } from '@/theme';
 import { formatFCFA } from '@/utils/format';
 
-type Filter = 'todo' | 'progress' | 'done';
+type Filter = 'todo' | 'progress' | 'delivered' | 'cancelled';
 const FILTERS: { id: Filter; label: string; statuses: OrderStatus[] }[] = [
   { id: 'todo', label: 'À traiter', statuses: ['pending'] },
   { id: 'progress', label: 'En cours', statuses: ['confirmed', 'shipped'] },
-  { id: 'done', label: 'Terminées', statuses: ['delivered', 'cancelled'] },
+  { id: 'delivered', label: 'Livrées', statuses: ['delivered'] },
+  { id: 'cancelled', label: 'Annulées', statuses: ['cancelled'] },
 ];
 
 /** Commandes reçues : confirmer, expédier, suivre jusqu'au « Reçu » du client. */
@@ -35,7 +37,9 @@ export default function SellerOrders() {
       return;
     }
     try {
-      setOrders(await fetchStoreOrders(store.remoteId));
+      const list = await fetchStoreOrders(store.remoteId);
+      setOrders(list);
+      useSellerOrders.getState().setFrom(list);
       setError(null);
     } catch {
       setError('Impossible de charger les commandes. Vérifiez votre connexion.');

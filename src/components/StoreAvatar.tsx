@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { colors, fonts } from '@/theme';
@@ -9,8 +10,10 @@ type AvatarStore = Pick<Store, 'logoInitials' | 'logoColor' | 'logoUri'>;
 /** Logo de boutique : image du vendeur, sinon initiales sur sa couleur. */
 export function StoreAvatar({ store, size = 48 }: { store: AvatarStore; size?: number }) {
   const shape = { width: size, height: size, borderRadius: size / 2 };
-  if (store.logoUri) {
-    return <Image source={{ uri: store.logoUri }} style={[styles.logo, shape]} contentFit="cover" />;
+  // Logo introuvable (fichier disparu de l'appareil) : on retombe sur les initiales.
+  const [failedUri, setFailedUri] = useState<string | null>(null);
+  if (store.logoUri && failedUri !== store.logoUri) {
+    return <Image source={{ uri: store.logoUri }} style={[styles.logo, shape]} contentFit="cover" onError={() => setFailedUri(store.logoUri ?? null)} />;
   }
   return (
     <View style={[styles.logo, shape, { backgroundColor: store.logoColor }]}>

@@ -1,15 +1,17 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { CloudUpload, Eye, EyeOff, MoreHorizontal, Package, Pencil, RefreshCw, Trash2 } from 'lucide-react-native';
+import { CloudUpload, Eye, EyeOff, MoreHorizontal, Package, Pencil, RefreshCw, Search, Tag, Trash2, X } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 
 import { deleteProductEverywhere, pullSellerData, setProductStatus, syncProduct } from '@/api/sellerSync';
 import { EmptyState } from '@/components/EmptyState';
 import { useTabBarSpace } from '@/components/FloatingTabBar';
+import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { AddProductFab } from '@/components/seller/AddProductFab';
+import { FormField } from '@/components/seller/FormField';
 import { SheetAction, StoreSheet } from '@/components/storefront/StoreSheet';
 import { useSeller } from '@/store/useSeller';
 import { colors, fonts, radii, spacing, typography } from '@/theme';
@@ -41,7 +43,34 @@ export default function SellerProducts() {
   const [confirmDelete, setConfirmDelete] = useState<SellerProduct | null>(null);
   const [working, setWorking] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const items = useMemo(() => (filter === 'all' ? products : products.filter((p) => p.status === filter)), [products, filter]);
+  const [search, setSearch] = useState('');
+  // Prix et stock modifiés sans ouvrir la fiche complète.
+  const [quick, setQuick] = useState<SellerProduct | null>(null);
+  const [quickPrice, setQuickPrice] = useState('');
+  const [quickStock, setQuickStock] = useState('');
+  const items = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return products.filter((p) => (filter === 'all' || p.status === filter) && (!q || p.name.toLowerCase().includes(q)));
+  }, [products, filter, search]);
+  const openQuick = (p: SellerProduct) => {
+    setQuick(p);
+    setQuickPrice(p.price ? String(p.price) : '');
+    setQuickStock(String(p.stock));
+  };
+  const price = Number(quickPrice.replace(/[^\d]/g, ''));
+  const stock = Number(quickStock.replace(/[^\d]/g, '') || '0');
+  const saveQuick = () => {
+    if (!quick || price <= 0) return;
+    const id = quick.id;
+    setQuick(null);
+    if (price === quick.price && stock === quick.stock) return;
+    // Un ancien prix barré n'a de sens que s'il reste supérieur au nouveau prix.
+    const oldPrice = quick.oldPrice && quick.oldPrice > price ? quick.oldPrice : undefined;
+    run(id, () => {
+      useSeller.getState().patchProduct(id, { price, stock, oldPrice });
+      return syncProduct(id);
+    });
+  };
 
   const run = useCallback(async (id: string, fn: () => Promise<unknown>) => {
     setWorking(id);
@@ -71,6 +100,26 @@ export default function SellerProducts() {
   return (
     <View style={styles.screen}>
       <ScreenHeader title="Mes produits" back={false} large />
+      {products.length > 3 && (
+        <View style={styles.search}>
+          <Search size={18} color={colors.textSecondary} strokeWidth={1.8} />
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Rechercher un produit"
+            placeholderTextColor={colors.textMuted}
+            style={styles.searchInput}
+            returnKeyType="search"
+            autoCorrect={false}
+            accessibilityLabel="Rechercher un produit"
+          />
+          {search ? (
+            <Pressable onPress={() => setSearch('')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Effacer la recherche">
+              <X size={18} color={colors.textSecondary} strokeWidth={2} />
+            </Pressable>
+          ) : null}
+        </View>
+      )}
       <View style={styles.filters}>
         {FILTERS.map((f) => {
           const active = f.id === filter;
@@ -105,7 +154,7 @@ export default function SellerProducts() {
         ListEmptyComponent={
           <EmptyState
             icon={Package}
-            title={products.length === 0 ? 'Votre vitrine est vide' : 'Aucun produit ici'}
+            title={products.length === 0 ? 'Votre vitrine est vide' : search.trim() ? 'Aucun produit ne correspond' : 'Aucun produit ici'}
             message={products.length === 0 ? 'Ajoutez votre premier produit : une photo, un nom et un prix suffisent.' : undefined}
             actionLabel={products.length === 0 ? 'Ajouter un produit' : undefined}
             onAction={products.length === 0 ? () => router.push('/product-editor') : undefined}
@@ -189,6 +238,17 @@ export default function SellerProducts() {
                 router.push({ pathname: '/product-editor', params: { id } });
               }}
             />
+            <SheetAction
+              icon={<Tag size={18} color={colors.cognac} strokeWidth={1.9} />}
+              label="Changer le prix ou le stock"
+              detail={menu.variants?.length ? 'Ce produit a des variantes : ouvre la fiche' : `${menu.price ? formatFCFA(menu.price) : 'Prix à indiquer'} · ${menu.stock} en stock`}
+              onPress={() => {
+                const p = menu;
+                setMenu(null);
+                if (p.variants?.length) router.push({ pathname: '/product-editor', params: { id: p.id } });
+                else openQuick(p);
+              }}
+            />
             {menu.status === 'published' ? (
               <SheetAction
                 icon={<EyeOff size={18} color={colors.cognac} strokeWidth={1.9} />}
@@ -241,6 +301,24 @@ export default function SellerProducts() {
       </StoreSheet>
 
       <StoreSheet
+        visible={!!quick}
+        title="Prix et stock"
+        subtitle={quick?.name || undefined}
+        onClose={() => setQuick(null)}
+        footer={<PrimaryButton label="Enregistrer" onPress={saveQuick} disabled={price <= 0} variant="caramel" style={{ height: 54 }} />}
+      >
+        <FormField label="Prix (FCFA)" value={quickPrice} onChangeText={(t) => setQuickPrice(t.replace(/[^\d]/g, ''))} keyboardType="number-pad" placeholder="Ex. 5000" autoFocus />
+        <FormField
+          label="Quantité en stock"
+          hint="0 = le produit s’affiche « Épuisé »."
+          value={quickStock}
+          onChangeText={(t) => setQuickStock(t.replace(/[^\d]/g, ''))}
+          keyboardType="number-pad"
+          placeholder="0"
+        />
+      </StoreSheet>
+
+      <StoreSheet
         visible={!!confirmDelete}
         title="Supprimer ce produit ?"
         subtitle="Il sera retiré de votre boutique et de BoutiQ. Cette action est définitive."
@@ -264,6 +342,8 @@ export default function SellerProducts() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: spacing.screen, marginBottom: 12, paddingHorizontal: 14, height: 46, borderRadius: radii.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  searchInput: { flex: 1, fontFamily: fonts.regular, fontSize: 15, color: colors.text, paddingVertical: 0 },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: spacing.screen, marginBottom: spacing.md },
   filter: { paddingHorizontal: 14, height: 38, borderRadius: radii.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, justifyContent: 'center' },
   filterActive: { backgroundColor: colors.buttonPrimary, borderColor: colors.buttonPrimary },

@@ -71,7 +71,7 @@ export default function FavoritesScreen() {
               title="Aucune boutique suivie"
               message="Suivez vos boutiques préférées pour être prévenu de leurs nouveautés."
               actionLabel="Découvrir les boutiques"
-              onAction={() => router.navigate('/stores')}
+              onAction={() => router.navigate({ pathname: '/categories', params: { view: 'stores' } })}
             />
           }
           renderItem={({ item }) => (

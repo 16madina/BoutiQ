@@ -5,7 +5,9 @@ import { supabase, supabaseEnabled } from '@/lib/supabase';
 import { deviceStorage } from '@/store/persist';
 
 /**
- * Connexion par SMS (code à 6 chiffres).
+ * Connexion au compte.
+ * - Par e-mail et mot de passe : voir src/api/authAccount.ts (toujours disponible).
+ * - Par SMS (code à 6 chiffres), ci-dessous :
  *
  * - Mode réel (EXPO_PUBLIC_SMS_AUTH=1 dans .env.local, fournisseur SMS configuré dans
  *   Supabase → Authentication → Phone) : le numéro est RATTACHÉ au compte déjà utilisé
@@ -15,9 +17,15 @@ import { deviceStorage } from '@/store/persist';
 export const AUTH_DEMO_MODE = !(supabaseEnabled && process.env.EXPO_PUBLIC_SMS_AUTH === '1');
 export const DEMO_OTP_CODE = '123456';
 
+/** Connexion par SMS proposée à l'écran : fournisseur configuré, ou app lancée sans Supabase (démo). */
+export const SMS_AUTH_AVAILABLE = !supabaseEnabled || process.env.EXPO_PUBLIC_SMS_AUTH === '1';
+
 export interface Session {
   userId: string;
-  phone: string;
+  /** Renseigné pour une connexion par SMS. */
+  phone?: string;
+  /** Renseigné pour une connexion par e-mail. */
+  email?: string;
   signedInAt: string;
 }
 
@@ -26,6 +34,7 @@ interface AuthState {
   /** Lève une erreur avec un message simple si l'envoi échoue. */
   requestOtp: (phone: string) => Promise<void>;
   verifyOtp: (phone: string, code: string) => Promise<boolean>;
+  setSession: (session: Session | null) => void;
   signOut: () => void;
 }
 
@@ -62,7 +71,8 @@ export const useAuth = create<AuthState>()(
         set({ session: { userId: data.user.id, phone, signedInAt: new Date().toISOString() } });
         return true;
       },
-      // Le compte Supabase est conservé : boutique et commandes restent liées à ce téléphone.
+      setSession: (session) => set({ session }),
+      // Session locale seulement ; la vraie déconnexion d'un compte est dans src/api/authAccount.ts.
       signOut: () => set({ session: null }),
     }),
     { name: 'mymarket-auth', storage: deviceStorage },

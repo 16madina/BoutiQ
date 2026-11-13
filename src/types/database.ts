@@ -11,6 +11,48 @@ export type Database = {
   __InternalSupabase: { PostgrestVersion: '14.18' };
   public: {
     Tables: {
+      // Messagerie (migration 20261113110000_messaging) : ajouté à la main.
+      conversations: {
+        Row: {
+          buyer_id: string;
+          buyer_unread: number;
+          created_at: string;
+          id: string;
+          last_message: string;
+          last_message_at: string;
+          last_sender_id: string | null;
+          seller_unread: number;
+          store_id: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      messages: {
+        Row: { body: string; conversation_id: string; created_at: string; id: string; sender_id: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      // Codes promo (migration 20261113120000_promo_codes) : ajouté à la main.
+      promo_codes: {
+        Row: {
+          active: boolean;
+          code: string;
+          created_at: string;
+          expires_at: string | null;
+          id: string;
+          is_public: boolean;
+          max_uses: number | null;
+          min_total: number;
+          percent: number;
+          store_id: string;
+          used_count: number;
+        };
+        Insert: { code: string; percent: number; store_id: string; expires_at?: string | null; is_public?: boolean; max_uses?: number | null; min_total?: number };
+        Update: { active?: boolean; is_public?: boolean };
+        Relationships: [];
+      };
       favorites: {
         Row: { created_at: string; product_key: string; user_id: string };
         Insert: { created_at?: string; product_key: string; user_id?: string };
@@ -85,10 +127,12 @@ export type Database = {
           delivery_city: string | null;
           delivery_name: string | null;
           delivery_phone: string | null;
+          discount: number;
           id: string;
           mobile_money_provider: string | null;
           note: string | null;
           payment_method: Enums['payment_method'];
+          promo_code: string | null;
           shipped_at: string | null;
           status: Enums['order_status'];
           store_id: string;
@@ -158,6 +202,7 @@ export type Database = {
         Row: {
           active_space: Enums['app_space'];
           address: string | null;
+          avatar_path: string | null;
           city: string | null;
           created_at: string;
           full_name: string | null;
@@ -165,8 +210,8 @@ export type Database = {
           phone: string | null;
           updated_at: string;
         };
-        Insert: { id: string; active_space?: Enums['app_space']; address?: string | null; city?: string | null; full_name?: string | null; phone?: string | null };
-        Update: { active_space?: Enums['app_space']; address?: string | null; city?: string | null; full_name?: string | null; phone?: string | null };
+        Insert: { id: string; active_space?: Enums['app_space']; address?: string | null; avatar_path?: string | null; city?: string | null; full_name?: string | null; phone?: string | null };
+        Update: { active_space?: Enums['app_space']; address?: string | null; avatar_path?: string | null; city?: string | null; full_name?: string | null; phone?: string | null };
         Relationships: [];
       };
       seller_details: {
@@ -310,6 +355,51 @@ export type Database = {
       };
     };
     Functions: {
+      // Modération (migration 20261113090000_store_moderation) : ajouté à la main, à régénérer après application.
+      admin_list_stores: {
+        Args: { p_status?: Enums['store_status'] };
+        Returns: {
+          id: string;
+          slug: string;
+          name: string;
+          description: string;
+          city: string;
+          country: string;
+          category: string;
+          status: Enums['store_status'];
+          submitted_at: string | null;
+          rejection_reason: string | null;
+          logo_path: string | null;
+          full_name: string | null;
+          phone: string | null;
+          whatsapp: string | null;
+          seller_type: Enums['seller_type'] | null;
+          business_name: string | null;
+          id_document_path: string | null;
+          product_count: number;
+        }[];
+      };
+      admin_review_store: { Args: { p_store_id: string; p_decision: Enums['store_status']; p_reason?: string }; Returns: undefined };
+      is_admin: { Args: Record<string, never>; Returns: boolean };
+      mark_conversation_read: { Args: { p_conversation_id: string }; Returns: undefined };
+      my_conversations: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          role: string;
+          store_id: string;
+          store_slug: string;
+          store_name: string;
+          store_logo_path: string | null;
+          buyer_name: string;
+          last_message: string;
+          last_message_at: string;
+          last_from_me: boolean | null;
+          unread: number;
+        }[];
+      };
+      open_conversation: { Args: { p_store_id: string }; Returns: string };
+      send_message: { Args: { p_conversation_id: string; p_body: string }; Returns: string };
       is_slug_available: { Args: { p_slug: string }; Returns: boolean };
       place_order: {
         Args: {
@@ -317,10 +407,15 @@ export type Database = {
           p_items: Json;
           p_note?: string;
           p_payment?: Enums['payment_method'];
+          p_promo_code?: string;
           p_provider?: string;
           p_store_id: string;
         };
         Returns: string;
+      };
+      check_promo_code: {
+        Args: { p_store_id: string; p_code: string; p_subtotal: number };
+        Returns: { code: string; percent: number; discount: number }[];
       };
       store_dashboard_stats: {
         Args: { p_store_id: string };
